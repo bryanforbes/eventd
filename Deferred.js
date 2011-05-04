@@ -1,4 +1,4 @@
-define(['dojo', 'dojo/listen'], function(dojo, listen){
+define(['dojo/_base/lang', 'dojo/listen'], function(dojo, listen){
     var freeze = Object.freeze || function(){};
 
     function Promise(){}

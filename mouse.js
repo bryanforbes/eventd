@@ -1,5 +1,5 @@
-define(['dojo', 'dojo/window', 'dojo/listen', './main', './Deferred', 'dojo/_base/window'], function(dojo, win, listen, eventd, Deferred){
-	var MouseDefaults = dojo.declare(eventd.Defaults, {
+define(['dojo/_base/declare', 'dojo/window', 'dojo/listen', './main', './Deferred', 'dojo/_base/array', 'dojo/_base/sniff', 'dojo/_base/fx'], function(declare, win, listen, eventd, Deferred, dojo){
+	var MouseDefaults = declare(eventd.Defaults, {
 		click: {
 			left: 0,
 			right: 0
@@ -40,7 +40,7 @@ define(['dojo', 'dojo/window', 'dojo/listen', './main', './Deferred', 'dojo/_bas
 		}
 	})();
 
-	var MouseOptions = dojo.declare(eventd.Options, {
+	var MouseOptions = declare(eventd.Options, {
 		detail: 1,
 		screenX: 1,
 		screenY: 1,
@@ -75,7 +75,7 @@ define(['dojo', 'dojo/window', 'dojo/listen', './main', './Deferred', 'dojo/_bas
 		}
 	});
 
-	var MouseEvent = dojo.declare(eventd.Event, {
+	var MouseEvent = declare(eventd.Event, {
 		optionsConstructor: MouseOptions
 	});
 	if(dojo.doc.createEvent){
@@ -103,14 +103,14 @@ define(['dojo', 'dojo/window', 'dojo/listen', './main', './Deferred', 'dojo/_bas
 
 	dojo.forEach(["MouseDown", "MouseUp", "Click", "DblClick", "MouseMove", "MouseOver", "MouseOut"],
 		function(name){
-			events[name] = dojo.declare(MouseEvent, {
+			events[name] = declare(MouseEvent, {
 				type: name.toLowerCase()
 			});
 		}
 	);
 
 	if(defaults.contextmenu){
-		events.ContextMenu = dojo.declare(MouseEvent, {
+		events.ContextMenu = declare(MouseEvent, {
 			type: "contextmenu"
 		});
 	}

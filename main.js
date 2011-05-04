@@ -1,10 +1,10 @@
-define(['dojo', 'dojo/listen', './Deferred'], function(dojo, listen, Deferred){
+define(['dojo/_base/declare', 'dojo/listen', './Deferred', 'dojo/_base/html', 'dojo/_base/window'], function(declare, listen, Deferred, dojo){
 
 	var op = Object.prototype,
 		opts = op.toString,
 		cname = "constructor";
 
-	var Options = dojo.declare(null, {
+	var Options = declare(null, {
 		bubbles: true,
 		cancelable: true,
 		view: null,
@@ -52,7 +52,7 @@ define(['dojo', 'dojo/listen', './Deferred'], function(dojo, listen, Deferred){
 		}
 	});
 
-	var Defaults = dojo.declare(null, {
+	var Defaults = declare(null, {
 		constructor: function(specifics){
 			specifics = specifics || {};
 			for(var def in this){
@@ -73,7 +73,7 @@ define(['dojo', 'dojo/listen', './Deferred'], function(dojo, listen, Deferred){
 		};
 	}
 
-	var Event = dojo.declare(null, {
+	var Event = declare(null, {
 		node: null,
 		type: null,
 		originalOptions: null,
@@ -159,10 +159,10 @@ define(['dojo', 'dojo/listen', './Deferred'], function(dojo, listen, Deferred){
 	}
 
 	var events = {
-		Change: dojo.declare(Event, {
+		Change: declare(Event, {
 			type: "change"
 		}),
-		Focus: dojo.declare(Event, {
+		Focus: declare(Event, {
 			type: "focus",
 			asyncDeferred: true,
 			create: function(){},

@@ -18,7 +18,7 @@
 		require(['eventd/mouse', 'eventd/keyboard'], function(mouse, keyboard){
 			mouse.click(dojo.byId("cbx")).then.delay(function(){
 				mouse.click(dojo.byId("txt")).then(function(){
-					keyboard.keystrokes(dojo.byId("txt"), "Bryan Forbes", 100);
+					keyboard.keystrokes(dojo.byId("txt"), "Bryan Forbes");
 				});
 			}, 500);
 		});
