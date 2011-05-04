@@ -48,6 +48,9 @@
 				listen(node, "mouseup", function(evt){
 					logIt(id, "mouseup", evt);
 				});
+				listen(node, "change", function(evt){
+					logIt(id, "change", evt);
+				});
 				listen(node, "click", function(evt){
 					logIt(id, "click", evt);
 				});
