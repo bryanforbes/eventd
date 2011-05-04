@@ -8,6 +8,7 @@ EVENTD=~/Projects/eventd
 
 cd "$DOJO"
 git archive --prefix=dojo/ master | tar -x -C "$SCRIPTDIR"
+rm -r dojo/tests
 
 cd "$EVENTD"
 git archive --prefix=eventd/ master | tar -x -C "$SCRIPTDIR"
