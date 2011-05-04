@@ -1,10 +1,10 @@
-define(['dojo', './main'], function(dojo, eventd){
+define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo/_base/sniff', 'dojo/_base/connect'], function(declare, listen, eventd, dojo){
 	var KEY_CODE			= 1, // keyCode set to key code
 		KEY_CODE_CHAR_CODE	= 2, // keyCode set to character code
 		CHAR_CODE			= 4, // charCode set to character code
 		CHAR_CODE_ZERO		= 8; // charCode set to 0
 
-	var KeyboardDefaults = dojo.declare(eventd.Defaults, {
+	var KeyboardDefaults = declare(eventd.Defaults, {
 		characters: {
 			keydown:  KEY_CODE,
 			keypress: KEY_CODE_CHAR_CODE,
@@ -72,7 +72,7 @@ define(['dojo', './main'], function(dojo, eventd){
 		return specials;
 	})();
 
-	var KeyboardOptions = dojo.declare(eventd.Options, {
+	var KeyboardOptions = declare(eventd.Options, {
 		ctrlKey: 0,
 		altKey: 0,
 		shiftKey: 0,
@@ -122,14 +122,14 @@ define(['dojo', './main'], function(dojo, eventd){
 		}
 	});
 
-	var KeyboardEvent = dojo.declare(eventd.Event, {
+	var KeyboardEvent = declare(eventd.Event, {
 		optionsConstructor: KeyboardOptions
 	});
 
 	if(dojo.doc.createEvent){
 		try{
 			dojo.doc.createEvent("KeyEvents");
-			dojo.extend(KeyboardEvent, {
+			KeyboardEvent.extend({
 				create: function(){
 					var event, options = this.options;
 					try{
@@ -148,7 +148,7 @@ define(['dojo', './main'], function(dojo, eventd){
 		}catch(e){
 			try{
 				dojo.doc.createEvent("Events");
-				dojo.extend(KeyboardEvent, {
+				KeyboardEvent.extend({
 					create: function(){
 						var event, options = this.options;
 						try{
@@ -169,7 +169,7 @@ define(['dojo', './main'], function(dojo, eventd){
 
 	var events = {};
 	dojo.forEach(["KeyUp", "KeyDown", "KeyPress"], function(name){
-		events[name] = dojo.declare(KeyboardEvent, {
+		events[name] = declare(KeyboardEvent, {
 			type: name.toLowerCase()
 		});
 	});
@@ -212,8 +212,8 @@ define(['dojo', './main'], function(dojo, eventd){
 			var e = dojo.doc.createEvent("TextEvent");
 			tests.hasTextEvents = typeof e.initTextEvent != "undefined";
 			e.initTextEvent("textInput", true, true, null, "asdf");
-			var h = dojo.connect(text1, "input", function(){
-				dojo.disconnect(h);
+			var h = listen(text1, "input", function(){
+				h.cancel();
 				tests.textEventFiresInput = true;
 			});
 			text1.dispatchEvent(e);
@@ -224,11 +224,11 @@ define(['dojo', './main'], function(dojo, eventd){
 	})();
 
 	if(tests.hasTextEvents){
-		var TextInputOptions = dojo.declare(eventd.Options, {
+		var TextInputOptions = declare(eventd.Options, {
 			data: ""
 		});
 
-		var TextInput = dojo.declare(eventd.Event, {
+		var TextInput = declare(eventd.Event, {
 			type: "textInput",
 			optionsConstructor: TextInputOptions,
 			create: function(){
@@ -240,7 +240,7 @@ define(['dojo', './main'], function(dojo, eventd){
 			}
 		});
 		if(!tests.textEventFiresInput){
-			var Input = dojo.declare(eventd.Event, {
+			var Input = declare(eventd.Event, {
 				type: "input",
 				create: function(){
 					var event = this.node.ownerDocument.createEvent("Event"),
@@ -253,7 +253,7 @@ define(['dojo', './main'], function(dojo, eventd){
 			});
 		}
 	}else if(!tests.pressChars){
-		dojo.extend(events.KeyPress, {
+		events.KeyPress.extend({
 			postDispatch: function(deferred){
 				var node = this.node,
 					options = this.options;
@@ -336,6 +336,7 @@ define(['dojo', './main'], function(dojo, eventd){
 		},
 		keystrokes: function(node, characters, delayBetween){
 			node = dojo.byId(node);
+			delayBetween = delayBetween || 50;
 			var sequence = [],
 				upper = false;
 			for(var i=0, character; character=characters[i]; i++){
