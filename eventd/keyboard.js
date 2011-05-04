@@ -329,11 +329,13 @@ define(['dojo', './main'], function(dojo, eventd){
 		keypress: Dispatcher(events.KeyPress),
 		keyup: Dispatcher(events.KeyUp),
 		keystroke: function(node, character){
+			node = dojo.byId(node);
 			var sequence = getSequence(node, character);
 
 			return generator(sequence, node);
 		},
 		keystrokes: function(node, characters, delayBetween){
+			node = dojo.byId(node);
 			var sequence = [],
 				upper = false;
 			for(var i=0, character; character=characters[i]; i++){
