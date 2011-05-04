@@ -85,7 +85,7 @@ define(['dojo', 'dojo/listen', './Deferred'], function(dojo, listen, Deferred){
 		optionsConstructor: Options,
 
 		constructor: function(node, options, dontCreate){
-			this.node = node;
+			this.node = dojo.byId(node);
 
 			this.originalOptions = options;
 			this.options = new this.optionsConstructor(this.type, options);
@@ -121,7 +121,7 @@ define(['dojo', 'dojo/listen', './Deferred'], function(dojo, listen, Deferred){
 				try{
 					dojo.global.event = this._event;
 				}catch(e){}
-				//source index makes sure element is still in the document
+				// a sourceIndex greater than 0 means the node is in the document
 				if(this.node.sourceIndex > 0){
 					return this.node.fireEvent("on"+this.type, this._event);
 				}
