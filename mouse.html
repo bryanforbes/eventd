@@ -1,0 +1,31 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Mouse Demos</title>
+	<script>
+		var dojoConfig = {
+			async: true,
+			packages: [{
+				name: 'eventd',
+				location: '../eventd',
+				lib: '.'
+			}]
+		};
+	</script>
+	<script src="dojo/dojo.js"></script>
+	<script>
+		require(['dojo', 'eventd/mouse'], function(dojo, mouse){
+			mouse.click(dojo.byId("chk1")).then.delay(function(){
+				mouse.click(dojo.byId("chk2")).then.delay(function(){
+					mouse.click(dojo.byId("chk1"));
+				},1000);
+			},1000);
+		});
+	</script>
+</head>
+<body>
+	<input id="chk1" type="checkbox" />
+	<input id="chk2" type="checkbox" />
+</body>
+</html>
