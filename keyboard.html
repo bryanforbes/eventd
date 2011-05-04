@@ -1,0 +1,78 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Keyboard Event Demos</title>
+	<style>
+		#output {
+			width: 400px;
+			height: 200px;
+		}
+	</style>
+	<script>
+		var dojoConfig = {
+			async: true,
+			packages: [{
+				name: 'eventd',
+				location: '../eventd',
+				lib: '.'
+			}]
+		};
+	</script>
+	<script src="dojo/dojo.js"></script>
+	<script>
+		require(['dojo', 'dojo/listen', 'eventd/mouse', 'eventd/keyboard'], function(dojo, listen, mouse, keyboard){
+			var logIt = (function(){
+				var output = dojo.byId("output");
+
+				return function(){
+					var str = "";
+
+					for(var i=0, l=arguments.length; i<l; i++){
+						if(i>0){
+							str += " ";
+						}
+						str += arguments[i] + "";
+					}
+
+					output.innerHTML += "\r\n" + str;
+					output.scrollTop = output.scrollHeight;
+				};
+			})();
+
+			function listenMouseEvents(id){
+				var node = dojo.byId(id);
+				listen(node, "keydown", function(evt){
+					logIt(id, "keydown", evt);
+				});
+				listen(node, "keyup", function(evt){
+					logIt(id, "keyup", evt);
+				});
+				listen(node, "keypress", function(evt){
+					logIt(id, "keypress", evt);
+				});
+				listen(node, "textInput", function(evt){
+					logIt(id, "textInput", evt);
+				});
+				listen(node, "input", function(evt){
+					logIt(id, "input", evt);
+				});
+			}
+
+			listenMouseEvents("txt");
+
+			mouse.click("txt").then.delay(function(){
+				keyboard.keystrokes("txt", "Bryan Forbes", 50);
+			},1000);
+		});
+	</script>
+</head>
+<body>
+	<input id="txt" type="text">
+
+	<div>
+		Output:<br>
+		<textarea id="output"></textarea>
+	</div>
+</body>
+</html>
