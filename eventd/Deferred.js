@@ -1,4 +1,4 @@
-define(['dojo/_base/lang', 'dojo/listen'], function(dojo, listen){
+define(['dojo/_base/lang', 'dojo/on'], function(dojo, on){
     var freeze = Object.freeze || function(){};
 
     function Promise(){}
@@ -157,7 +157,7 @@ define(['dojo/_base/lang', 'dojo/listen'], function(dojo, listen){
 					timeout = null;
 				}
 			}),
-			h = listen(node, type, function(evt){
+			h = on(node, type, function(evt){
 				// make sure to disconnect this handler
 				h.cancel();
 
