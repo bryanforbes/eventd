@@ -75,13 +75,13 @@
 			function onMoveEvents(id){
 				id = dojo.byId(id);
 				on(id, "mouseenter", function(evt){
-					console.log("Enter", evt.target);
+					logIt(evt.target, "mouseenter", evt);
 				});
 				on(id, "mouseleave", function(evt){
-					console.log("Leave", evt.target);
+					logIt(evt.target, "mouseleave", evt);
 				});
 				on(id, "mousemove", function(evt){
-					console.log("Move", evt.target);
+					logIt(evt.target, "mousemove", evt);
 				});
 			}
 
@@ -98,6 +98,7 @@
 			mouse.click("chk1").then.delay(function(){
 				mouse.click("chk2").then.delay(function(){
 					mouse.click("chk1").then.delay(function(){
+						onMoveEvents(dojo.body());
 						mouse.move(300, 300, 2000, true);
 					},1000);
 				},1000);
