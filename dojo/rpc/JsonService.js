@@ -1,4 +1,4 @@
-define(["..", "./RpcService"], function(dojo) {
+define(["../main", "./RpcService"], function(dojo) {
 	// module:
 	//		dojo/rpc/JsonService
 	// summary:
@@ -55,8 +55,7 @@ dojo.declare("dojo.rpc.JsonService", dojo.rpc.RpcService, {
 			//		The array of parameters for this request;
 
 			var req = { "params": params, "method": method, "id": ++this.lastSubmissionId };
-			var data = dojo.toJson(req);
-			return data;
+			return dojo.toJson(req);
 		},
 
 		parseResults: function(/*anything*/obj){

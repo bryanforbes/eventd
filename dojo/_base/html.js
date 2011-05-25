@@ -1,4 +1,4 @@
-define(["./kernel", "./lang", "./sniff", "./unload", "./window"], function(dojo){
+define(["./kernel", "./lang", "./sniff", "./window"], function(dojo){
 	// module:
 	//		dojo/_base/html
 	// summary:
@@ -175,7 +175,7 @@ if(dojo.isIE){
 		//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
 		}else if(d.isIE){
 			var v = (node.unselectable = selectable ? "" : "on");
-			d.query("*", node).forEach("item.unselectable = '"+v+"'");
+			d.forEach(node.getElementsByTagName("*"), function(item){ item.unselectable = v; });
 		}
 		//>>excludeEnd("webkitMobile");
 		//FIXME: else?  Opera?
@@ -201,7 +201,7 @@ if(dojo.isIE){
 		}
 	};
 
-	dojo.place = function(node, refNode, position){
+	dojo.place = function(/*String|DomNode*/node, /*String|DomNode*/refNode, /*String|Number?*/position){
 		// summary:
 		//		Attempt to insert node into the DOM, choosing from various positioning options.
 		//		Returns the first argument resolved to a DOM node.
@@ -409,23 +409,21 @@ if(dojo.isIE){
 			// style values can be floats, client code may
 			// want to round this value for integer pixels.
 			if(avalue.slice && avalue.slice(-2) == 'px'){ return parseFloat(avalue); }
-			with(element){
-				var sLeft = style.left;
-				var rsLeft = runtimeStyle.left;
-				runtimeStyle.left = currentStyle.left;
-				try{
-					// 'avalue' may be incompatible with style.left, which can cause IE to throw
-					// this has been observed for border widths using "thin", "medium", "thick" constants
-					// those particular constants could be trapped by a lookup
-					// but perhaps there are more
-					style.left = avalue;
-					avalue = style.pixelLeft;
-				}catch(e){
-					avalue = 0;
-				}
-				style.left = sLeft;
-				runtimeStyle.left = rsLeft;
+			var s = element.style, rs = element.runtimeStyle, cs = element.currentStyle,
+				sLeft = s.left, rsLeft = rs.left;
+			rs.left = cs.left;
+			try{
+				// 'avalue' may be incompatible with style.left, which can cause IE to throw
+				// this has been observed for border widths using "thin", "medium", "thick" constants
+				// those particular constants could be trapped by a lookup
+				// but perhaps there are more
+				s.left = avalue;
+				avalue = s.pixelLeft;
+			}catch(e){
+				avalue = 0;
 			}
+			s.left = sLeft;
+			rs.left = rsLeft;
 			return avalue;
 		};
 	}
@@ -460,7 +458,7 @@ if(dojo.isIE){
 	//>>excludeEnd("webkitMobile");
 	dojo._getOpacity =
 	//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
-		d.isIE < 9 ? function(node){
+		d.isIE < 9 || (d.isIE && d.isQuirks) ? function(node){
 			try{
 				return af(node).Opacity / 100; // Number
 			}catch(e){
@@ -490,7 +488,7 @@ if(dojo.isIE){
 
 	dojo._setOpacity =
 		//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
-		d.isIE < 9 ? function(/*DomNode*/node, /*Number*/opacity){
+		d.isIE < 9 || (d.isIE && d.isQuirks) ? function(/*DomNode*/node, /*Number*/opacity){
 			var ov = opacity * 100, opaque = opacity == 1;
 			node.style.zoom = opaque ? "" : 1;
 
@@ -508,8 +506,8 @@ if(dojo.isIE){
 			af(node, 1).Enabled = !opaque;
 
 			if(node.nodeName.toLowerCase() == "tr"){
-				d.query("> td", node).forEach(function(i){
-					d._setOpacity(i, opacity);
+				d.forEach(node.childNodes, function(n){
+					n.tagName && n.tagName.toLowerCase() == "td" && d._setOpacity(n, opacity);
 				});
 			}
 			return opacity;
@@ -779,7 +777,7 @@ if(dojo.isIE){
 			// computed left/top which is more stable.
 			var sl = parseFloat(s.left), st = parseFloat(s.top);
 			if(!isNaN(sl) && !isNaN(st)){
-				l = sl, t = st;
+				l = sl,t = st;
 			}else{
 				// If child's computed left/top are not parseable as a number (e.g. "auto"), we
 				// have no choice but to examine the parent's computed style.
@@ -787,7 +785,7 @@ if(dojo.isIE){
 					var pcs = gcs(p);
 					if(pcs.overflow != "visible"){
 						var be = d._getBorderExtents(p, pcs);
-						l += be.l, t += be.t;
+						l += be.l,t += be.t;
 					}
 				}
 			}
@@ -806,7 +804,7 @@ if(dojo.isIE){
 			w: node.offsetWidth + me.w,
 			h: node.offsetHeight + me.h
 		};
-	}
+	};
 
 	dojo._getMarginSize = function(/*DomNode*/node, /*Object*/computedStyle){
 		// summary:
@@ -820,7 +818,7 @@ if(dojo.isIE){
 			w: (size.right - size.left) + me.w,
 			h: (size.bottom - size.top) + me.h
 		}
-	}
+	};
 
 	dojo._getContentBox = function(node, computedStyle){
 		// summary:
@@ -843,7 +841,7 @@ if(dojo.isIE){
 		}
 		// On Opera, offsetLeft includes the parent's border
 		//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
-		if(d.isOpera){ pe.l += be.l; pe.t += be.t; };
+		if(d.isOpera){ pe.l += be.l; pe.t += be.t; }
 		//>>excludeEnd("webkitMobile");
 		return {
 			l: pe.l,
@@ -944,7 +942,7 @@ if(dojo.isIE){
 
 	dojo._setMarginBox = function(/*DomNode*/node,	/*Number?*/leftPx, /*Number?*/topPx,
 													/*Number?*/widthPx, /*Number?*/heightPx,
-													/*Object*/computedStyle){
+													/*Object?*/computedStyle){
 		// summary:
 		//		sets the size of the node's margin box and placement
 		//		(left/top), irrespective of box model. Think of it as a
@@ -1037,25 +1035,6 @@ if(dojo.isIE){
 	// =============================
 	// Positioning
 	// =============================
-
-	var _sumAncestorProperties = function(node, prop){
-		if(!(node = (node||0).parentNode)){return 0;}
-		var val, retVal = 0, _b = d.body();
-		while(node && node.style){
-			if(gcs(node).position == "fixed"){
-				return 0;
-			}
-			val = node[prop];
-			if(val){
-				retVal += val - 0;
-				// opera and khtml #body & #html has the same values, we only
-				// need one value
-				if(node == _b){ break; }
-			}
-			node = node.parentNode;
-		}
-		return retVal;	//	integer
-	};
 
 	dojo._docScroll = function(){
 		var n = d.global;
@@ -1354,7 +1333,7 @@ if(dojo.isIE){
 		//	|	dojo.style("someNode", obj);
 
 		node = byId(node);
-		var args = arguments.length, prop;
+		var args = arguments.length;
 		if(args == 2 && typeof name != "string"){ // inline'd type check
 			// the object form of setter: the 2nd argument is a dictionary
 			for(var x in name){
@@ -1368,58 +1347,56 @@ if(dojo.isIE){
 			attrName = _attrNames[lc] || name;
 		if(args == 3){
 			// setter
-			do{
-				if(propName == "style" && typeof value != "string"){ // inline'd type check
-					// special case: setting a style
-					d.style(node, value);
-					break;
-				}
-				if(propName == "innerHTML"){
-					// special case: assigning HTML
-					//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
-					if(d.isIE && node.tagName.toLowerCase() in _roInnerHtml){
-						d.empty(node);
-						node.appendChild(d._toDom(value, node.ownerDocument));
-					}else{
-					//>>excludeEnd("webkitMobile");
-						node[propName] = value;
-					//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
-					}
-					//>>excludeEnd("webkitMobile");
-					break;
-				}
-				if(d.isFunction(value)){
-					// special case: assigning an event handler
-					// clobber if we can
-					var attrId = d.attr(node, _attrId);
-					if(!attrId){
-						attrId = _ctr++;
-						d.attr(node, _attrId, attrId);
-					}
-					if(!_evtHdlrMap[attrId]){
-						_evtHdlrMap[attrId] = {};
-					}
-					var h = _evtHdlrMap[attrId][propName];
-					if(h){
-						d.disconnect(h);
-					}else{
-						try{
-							delete node[propName];
-						}catch(e){}
-					}
-					// ensure that event objects are normalized, etc.
-					_evtHdlrMap[attrId][propName] = d.connect(node, propName, value);
-					break;
-				}
-				if(forceProp || typeof value == "boolean"){
-					// special case: forcing assignment to the property
-					// special case: setting boolean to a property instead of attribute
+			if(propName == "style" && typeof value != "string"){ // inline'd type check
+				// special case: setting a style
+				d.style(node, value);
+				return node; // DomNode
+			}
+			if(propName == "innerHTML"){
+				// special case: assigning HTML
+				//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
+				if(d.isIE && node.tagName.toLowerCase() in _roInnerHtml){
+					d.empty(node);
+					node.appendChild(d._toDom(value, node.ownerDocument));
+				}else{
+				//>>excludeEnd("webkitMobile");
 					node[propName] = value;
-					break;
+				//>>excludeStart("webkitMobile", kwArgs.webkitMobile);
 				}
-				// node's attribute
-				node.setAttribute(attrName, value);
-			}while(false);
+				//>>excludeEnd("webkitMobile");
+				return node; // DomNode
+			}
+			if(d.isFunction(value)){
+				// special case: assigning an event handler
+				// clobber if we can
+				var attrId = d.attr(node, _attrId);
+				if(!attrId){
+					attrId = _ctr++;
+					d.attr(node, _attrId, attrId);
+				}
+				if(!_evtHdlrMap[attrId]){
+					_evtHdlrMap[attrId] = {};
+				}
+				var h = _evtHdlrMap[attrId][propName];
+				if(h){
+					d.disconnect(h);
+				}else{
+					try{
+						delete node[propName];
+					}catch(e){}
+				}
+				// ensure that event objects are normalized, etc.
+				_evtHdlrMap[attrId][propName] = d.connect(node, propName, value);
+				return node; // DomNode
+			}
+			if(forceProp || typeof value == "boolean"){
+				// special case: forcing assignment to the property
+				// special case: setting boolean to a property instead of attribute
+				node[propName] = value;
+				return node; // DomNode
+			}
+			// node's attribute
+			node.setAttribute(attrName, value);
 			return node; // DomNode
 		}
 		// getter
@@ -1468,7 +1445,7 @@ if(dojo.isIE){
 		return _hasAttr(node, attrName) ? node.getAttribute(attrName) : null; // Anything
 	};
 
-	dojo.create = function(tag, attrs, refNode, pos){
+	dojo.create = function(/*String|DomNode*/tag, /*Object*/attrs, /*String?|DomNode?*/refNode, /*String?*/pos){
 		// summary:
 		//		Create an element, allowing for optional attribute decoration
 		//		and placement.

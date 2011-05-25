@@ -1,4 +1,4 @@
-define([".."], function(dojo) {
+define(["../main"], function(dojo) {
 	// module:
 	//		dojo/fx/easing
 	// summary:
@@ -97,7 +97,7 @@ dojo.fx.easing = {
 
 	quintInOut: function(/* Decimal? */n){
 		n = n * 2;
-		if(n < 1){ return Math.pow(n, 5) / 2; };
+		if(n < 1){ return Math.pow(n, 5) / 2; }
 		n -= 2;
 		return (Math.pow(n, 5) + 2) / 2;
 	},

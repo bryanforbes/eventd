@@ -1,4 +1,4 @@
-define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_base/window"], function(dojo, has){
+define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_base/lang", "../_base/window"], function(dojo, has){
   //  module:
   //    dojo/selector/acme
   //  summary:
@@ -6,7 +6,6 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 
 	var d = dojo;
 
-	var ctr = 0;
 /*
 	acme architectural overview:
 
@@ -14,7 +13,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 		designed to take any valid CSS3 selector and return the nodes matching
 		the selector. To do this quickly, it processes queries in several
 		steps, applying caching where profitable.
-		
+
 		The steps (roughly in reverse order of the way they appear in the code):
 			1.) check to see if we already have a "query dispatcher"
 				- if so, use that with the given parameterization. Skip to step 4.
@@ -124,7 +123,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 			// take an index to start a string slice from and an end position
 			// and return a trimmed copy of that sub-string
 			return trim(query.slice(s, e));
-		}
+		};
 
 		// the overall data graph of the full query, as represented by queryPart objects
 		var queryParts = [];
@@ -162,7 +161,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 				currentPart[ (specials.indexOf(tv) < 0) ? "tag" : "oper" ] = tv;
 				inTag = -1;
 			}
-		}
+		};
 
 		var endId = function(){
 			// called when the tokenizer might be at the end of an ID portion of a match
@@ -170,27 +169,29 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 				currentPart.id = ts(inId, x).replace(/\\/g, "");
 				inId = -1;
 			}
-		}
+		};
 
 		var endClass = function(){
 			// called when the tokenizer might be at the end of a class name
 			// match. CSS allows for multiple classes, so we augment the
 			// current item with another class in its list
 			if(inClass >= 0){
-				currentPart.classes.push(ts(inClass+1, x).replace(/\\/g, ""));
+				currentPart.classes.push(ts(inClass + 1, x).replace(/\\/g, ""));
 				inClass = -1;
 			}
-		}
+		};
 
 		var endAll = function(){
 			// at the end of a simple fragment, so wall off the matches
-			endId(); endTag(); endClass();
-		}
+			endId();
+			endTag();
+			endClass();
+		};
 
 		var endPart = function(){
 			endAll();
 			if(inPseudo >= 0){
-				currentPart.pseudos.push({ name: ts(inPseudo+1, x) });
+				currentPart.pseudos.push({ name: ts(inPseudo + 1, x) });
 			}
 			// hint to the selector engine to tell it whether or not it
 			// needs to do any iteration. Many simple selectors don't, and
@@ -237,7 +238,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 			queryParts.push(currentPart);
 
 			currentPart = null;
-		}
+		};
 
 		// iterate over the query, character by character, building up a
 		// list of query part objects
@@ -368,7 +369,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 					_cp = {
 						name: ts(inPseudo+1, x),
 						value: null
-					}
+					};
 					currentPart.pseudos.push(_cp);
 				}
 				inParens = x;
@@ -383,7 +384,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 		}
 		return queryParts;
 	};
-	
+
 
 	////////////////////////////////////////////////////////////////////////
 	// DOM query infrastructure
@@ -448,7 +449,6 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 			// E[foo$="bar"]
 			//		an E element whose "foo" attribute value ends exactly
 			//		with the string "bar"
-			var tval = " "+value;
 			return function(elem){
 				var ea = " "+_getAttr(elem, attr);
 				return (ea.lastIndexOf(value)==(ea.length-value.length));
@@ -472,9 +472,9 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 			//		an E element whose "hreflang" attribute has a
 			//		hyphen-separated list of values beginning (from the
 			//		left) with "en"
-			var valueDash = " "+value+"-";
+			var valueDash = value+"-";
 			return function(elem){
-				var ea = " "+_getAttr(elem, attr);
+				var ea = _getAttr(elem, attr);
 				return (
 					(ea == value) ||
 					(ea.indexOf(valueDash)==0)
@@ -569,9 +569,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 		"last-child": function(){ return _lookRight; },
 		"only-child": function(name, condition){
 			return function(node){
-				if(!_lookLeft(node)){ return false; }
-				if(!_lookRight(node)){ return false; }
-				return true;
+				return _lookLeft(node) && _lookRight(node);
 			};
 		},
 		"empty": function(name, condition){
@@ -808,7 +806,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 			return ret;
 		};
 	};
-	
+
 	/*
 	// thanks, Dean!
 	var itemIsAfterRoot = d.isIE ? function(item, root){
@@ -1266,7 +1264,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 		if(arr.length < 2){ return ret; }
 
 		_zipIdx++;
-		
+
 		// we have to fork here for IE and XML docs because we can't set
 		// expandos on their nodes (apparently). *sigh*
 		if(d.isIE && caseSensitive){
@@ -1454,7 +1452,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 		caseSensitive = (root.contentType && root.contentType=="application/xml") ||
 						(d.isOpera && (root.doctype || od.toString() == "[object XMLDocument]")) ||
 						(!!od) &&
-						(d.isIE ? od.xml : (root.xmlVersion||od.xmlVersion));
+				(d.isIE ? od.xml : (root.xmlVersion || od.xmlVersion));
 
 		// NOTE:
 		//		adding "true" as the 2nd argument to getQueryFunc is useful for
@@ -1468,7 +1466,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/lang", "../_bas
 			return r;
 		}
 		return _zip(r); // dojo.NodeList
-	}
+	};
 	query.filter = function(/*Node[]*/ nodeList, /*String*/ filter, /*String|DOMNode?*/ root){
 		// summary:
 		// 		function for filtering a NodeList based on a selector, optimized for simple selectors

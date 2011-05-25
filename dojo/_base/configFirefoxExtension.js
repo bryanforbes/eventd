@@ -1,3 +1,5 @@
+// TODO: this file needs to be converted to the v1.7 loader
+
 // a host environment specifically built for Mozilla extensions, but derived
 // from the browser host environment
 if(typeof window != 'undefined'){
@@ -39,7 +41,7 @@ if(typeof window != 'undefined'){
 
 		d._xhrObj = function(){
 			return new XMLHttpRequest();
-		}
+		};
 
 		// monkey-patch _loadUri to handle file://, chrome://, and resource:// url's
 		var oldLoadUri = d._loadUri;
@@ -52,14 +54,14 @@ if(typeof window != 'undefined'){
 				//		http://developer.mozilla.org/en/mozIJSSubScriptLoader
 				var l = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
 					.getService(Components.interfaces.mozIJSSubScriptLoader);
-				var value = l.loadSubScript(uri, d.global)
+				var value = l.loadSubScript(uri, d.global);
 				if(cb){ cb(value); }
 				return true;
 			}else{
 				// otherwise, call the pre-existing version
 				return oldLoadUri.apply(d, arguments);
 			}
-		}
+		};
 
 		// FIXME: PORTME
 		d._isDocumentOk = function(http){
@@ -67,8 +69,8 @@ if(typeof window != 'undefined'){
 			return (stat >= 200 && stat < 300) || 	// Boolean
 				stat == 304 || 						// allow any 2XX response code
 				stat == 1223 || 						// get it out of the cache
-				(!stat && (location.protocol=="file:" || location.protocol=="chrome:") );
-		}
+				(!stat && (location.protocol == "file:" || location.protocol == "chrome:") );
+		};
 
 		// FIXME: PORTME
 		// var owloc = window.location+"";
@@ -98,7 +100,7 @@ if(typeof window != 'undefined'){
 			if(d.config.cacheBust){
 				//Make sure we have a string before string methods are used on uri
 				uri += "";
-				uri += (uri.indexOf("?") == -1 ? "?" : "&") + String(d.config.cacheBust).replace(/\W+/g,"");
+				uri += (uri.indexOf("?") == -1 ? "?" : "&") + String(d.config.cacheBust).replace(/\W+/g, "");
 			}
 			var handleLocal = ["file:", "chrome:", "resource:"].some(function(prefix){
 				return String(uri).indexOf(prefix) == 0;
@@ -108,7 +110,7 @@ if(typeof window != 'undefined'){
 				//		http://forums.mozillazine.org/viewtopic.php?p=921150#921150
 				var ioService = Components.classes["@mozilla.org/network/io-service;1"]
 					.getService(Components.interfaces.nsIIOService);
-				var scriptableStream=Components
+				var scriptableStream = Components
 					.classes["@mozilla.org/scriptableinputstream;1"]
 					.getService(Components.interfaces.nsIScriptableInputStream);
 
@@ -125,22 +127,24 @@ if(typeof window != 'undefined'){
 					http.send(null);
 					// alert(http);
 					if(!d._isDocumentOk(http)){
-						var err = Error("Unable to load "+uri+" status:"+ http.status);
+						var err = Error("Unable to load " + uri + " status:" + http.status);
 						err.status = http.status;
 						err.responseText = http.responseText;
 						throw err;
 					}
 				}catch(e){
-					if(fail_ok){ return null; } // null
+					if(fail_ok){
+						return null;
+					} // null
 					// rethrow the exception
 					throw e;
 				}
 				return http.responseText; // String
 			}
-		}
-		
+		};
+
 		d._windowUnloaders = [];
-		
+
 		// FIXME: PORTME
 		d.windowUnloaded = function(){
 			// summary:
@@ -151,7 +155,7 @@ if(typeof window != 'undefined'){
 			while(mll.length){
 				(mll.pop())();
 			}
-		}
+		};
 
 		// FIXME: PORTME
 		d.addOnWindowUnload = function(/*Object?*/obj, /*String|Function?*/functionName){
@@ -165,9 +169,9 @@ if(typeof window != 'undefined'){
 			//	|	dojo.addOnWindowUnload(functionPointer)
 			//	|	dojo.addOnWindowUnload(object, "functionName")
 			//	|	dojo.addOnWindowUnload(object, function(){ /* ... */});
-	
+
 			d._onto(d._windowUnloaders, obj, functionName);
-		}
+		};
 
 		// XUL specific APIs
 		var contexts = [];
@@ -264,7 +268,7 @@ if(typeof window != 'undefined'){
 		if(dojo._inFlightCount == 0){
 			dojo._modulesLoaded();
 		}
-	}
+	};
 
 	/*
 	(function(){
@@ -287,7 +291,7 @@ if(typeof window != 'undefined'){
 		_handleNodeEvent("onunload", function() { dojo.windowUnloaded(); });
 	})();
 	*/
-	
+
 
 	//	FIXME: PORTME
 	// 		this event fires a lot, namely for all plugin XUL overlays and for
@@ -295,7 +299,7 @@ if(typeof window != 'undefined'){
 	// 		Dojo's to fire once..but we might care if pages navigate. We'll
 	// 		probably need an extension-specific API
 	if(!dojo.config.afterOnLoad){
-		window.addEventListener("DOMContentLoaded",function(e){
+		window.addEventListener("DOMContentLoaded", function(e){
 			dojo._loadInit(e);
 			// console.log("DOM content loaded", e);
 		}, false);
@@ -321,11 +325,11 @@ if(dojo.config.isDebug){
 	console.log = function(m){
 		var s = Components.classes["@mozilla.org/consoleservice;1"].getService(
 			Components.interfaces.nsIConsoleService
-		);
+			);
 		s.logStringMessage(m);
-	}
+	};
 	console.debug = function(){
 		console.log(dojo._toArray(arguments).join(" "));
-	}
+	};
 	// FIXME: what about the rest of the console.* methods? And is there any way to reach into firebug and log into it directly?
 }

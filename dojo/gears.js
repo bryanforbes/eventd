@@ -1,4 +1,4 @@
-define(["."], function(dojo) {
+define(["./main"], function(dojo) {
 	// module:
 	//		dojo/gears
 	// summary:
@@ -11,7 +11,6 @@ dojo.gears._gearsObject = function(){
 	//		factory method to get a Google Gears plugin instance to
 	//		expose in the browser runtime environment, if present
 	var factory;
-	var results;
 
 	var gearsObj = dojo.getObject("google.gears");
 	if(gearsObj){ return gearsObj; } // already defined elsewhere

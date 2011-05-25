@@ -1,4 +1,4 @@
-define(["..", "./util/QueryResults"], function(dojo) {
+define(["../main", "./util/QueryResults"], function(dojo) {
 	// module:
 	//		dojo/store/DataStore
 	// summary:
@@ -107,11 +107,11 @@ dojo.declare("dojo.store.DataStore", null, {
 		//		Optional options object as used by the underlying dojo.data Store.
 		// returns: dojo.store.util.QueryResults
 		//		A query results object that can be used to iterate over results.
-		var returnedObject, returnedError;
-		var deferred = new dojo.Deferred();
+		var fetchHandle;
+		var deferred = new dojo.Deferred(function(){ fetchHandle.abort && fetchHandle.abort(); });
 		deferred.total = new dojo.Deferred();
 		var converter = this._objectConverter(function(object){return object;});
-		this.store.fetch(dojo.mixin({
+		fetchHandle = this.store.fetch(dojo.mixin({
 			query: query,
 			onBegin: function(count){
 				deferred.total.resolve(count);

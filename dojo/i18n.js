@@ -1,4 +1,4 @@
-define([".", "require", "./has"], function(dojo, require, has) {
+define(["./main", "require", "./has"], function(dojo, require, has) {
 	// module:
 	//		dojo/i18n
 	// summary:
@@ -25,7 +25,7 @@ define([".", "require", "./has"], function(dojo, require, has) {
 			// ["foo/bar/baz/nls/foo", "foo/bar/baz/nls/", "/", "/", "foo", ""]
 			// so, if match[5] is blank, it means this is the top bundle definition.
 			// courtesy of http://requirejs.org
-			/(^.*(^|\/)nls(\/|$))([^\/]*)\/?([^\/]*)/,
+			/(^.*(^|\/)nls)(\/|$)([^\/]*)\/?([^\/]*)/,
 
 		getAvailableLocales= function(
 			root,
@@ -70,7 +70,7 @@ define([".", "require", "./has"], function(dojo, require, has) {
 			// note: id may be relative
 			var
 				match= nlsRe.exec(id),
-				bundlePath= (require.toAbsMid && require.toAbsMid(match[1])) || match[1],
+				bundlePath= ((require.toAbsMid && require.toAbsMid(match[1])) || match[1]) + "/",
 				bundleName= match[5] || match[4],
 				bundlePathAndName= bundlePath + bundleName,
 				locale= (match[5] && match[4]) || dojo.locale,
@@ -89,7 +89,7 @@ define([".", "require", "./has"], function(dojo, require, has) {
 					availableLocales= getAvailableLocales(!root._v1x && root, locale, bundlePath, bundleName);
 				require(availableLocales, function(){
 					for (var i= 1; i<availableLocales.length; i++){
-						cache[bundlePathAndName + "/" + availableLocales[i]]= current= dojo.mixin(dojo.clone(current), arguments[i]);
+						cache[availableLocales[i]]= current= dojo.mixin(dojo.clone(current), arguments[i]);
 					}
 					// target may not have been resolve (e.g., maybe only "fr" exists when "fr-ca" was requested)
 					cache[target]= current;
@@ -108,7 +108,7 @@ define([".", "require", "./has"], function(dojo, require, has) {
 		var syncRequire= function(deps, callback){
 			var results= [];
 			dojo.forEach(deps, function(mid){
-				var url= require.nameToUrl(mid) + ".js";
+				var url= require.toUrl(mid + ".js");
 				if(cache[url]){
 					results.push(cache[url]);
 				}else{
@@ -126,13 +126,14 @@ define([".", "require", "./has"], function(dojo, require, has) {
 							var
 								__result,
 								__fixup= function(bundle){
-									return bundle ? {root:bundle, _v1x:1} : __result;
+									// nls/<locale>/<bundle-name> indicates not the root.
+									return bundle ? (/nls\/[^\/]+\/[^\/]+$/.test(url) ? bundle : {root:bundle, _v1x:1}) : __result;
 								};
 
 							// TODO: make sure closure compiler does not stomp on this function name
 							function define(bundle){
 							  __result= bundle;
-							};
+							}
 							results.push(cache[url]= (__fixup(eval(text))));
 						},
 						error:function(){

@@ -1,4 +1,4 @@
-define(["..", "./ItemFileReadStore"], function(dojo) {
+define(["../main", "./ItemFileReadStore"], function(dojo) {
 	// module:
 	//		dojo/data/ItemFileWriteStore
 	// summary:
@@ -59,9 +59,8 @@ dojo.declare("dojo.data.ItemFileWriteStore", dojo.data.ItemFileReadStore, {
 	},
 
 	_getIdentifierAttribute: function(){
-		var identifierAttribute = this.getFeatures()['dojo.data.api.Identity'];
 		// this._assert((identifierAttribute === Number) || (dojo.isString(identifierAttribute)));
-		return identifierAttribute;
+		return this.getFeatures()['dojo.data.api.Identity'];
 	},
 
 
@@ -365,9 +364,8 @@ dojo.declare("dojo.data.ItemFileWriteStore", dojo.data.ItemFileReadStore, {
 		}else{
 			var newValueArray;
 			if(dojo.isArray(newValueOrValues)){
-				var newValues = newValueOrValues;
 				// Unfortunately, it's not safe to just do this:
-				//    newValueArray = newValues;
+				//    newValueArray = newValueOrValues;
 				// Instead, we need to copy the array, which slice() does very nicely.
 				// This is so that our internal data structure won't
 				// get corrupted if the user mucks with the values array *after*
@@ -439,7 +437,7 @@ dojo.declare("dojo.data.ItemFileWriteStore", dojo.data.ItemFileReadStore, {
 		return success; // boolean
 	},
 
-	_addReferenceToMap: function(/*item*/ refItem, /*item*/ parentItem, /*string*/ attribute){
+	_addReferenceToMap: function(/* item */ refItem, /* item */ parentItem, /* string */ attribute){
 		//	summary:
 		//		Method to add an reference map entry for an item and attribute.
 		//	description:
@@ -464,7 +462,7 @@ dojo.declare("dojo.data.ItemFileWriteStore", dojo.data.ItemFileReadStore, {
 		itemRef[attribute] = true;
 	},
 
-	_removeReferenceFromMap: function(/* item */ refItem, /* item */ parentItem, /*strin*/ attribute){
+	_removeReferenceFromMap: function(/* item */ refItem, /* item */ parentItem, /* string */ attribute){
 		//	summary:
 		//		Method to remove an reference map entry for an item and attribute.
 		//	description:
@@ -525,16 +523,13 @@ dojo.declare("dojo.data.ItemFileWriteStore", dojo.data.ItemFileReadStore, {
 
 	_flatten: function(/* anything */ value){
 		if(this.isItem(value)){
-			var item = value;
 			// Given an item, return an serializable object that provides a
 			// reference to the item.
 			// For example, given kermit:
 			//    var kermit = store.newItem({id:2, name:"Kermit"});
 			// we want to return
 			//    {_reference:2}
-			var identity = this.getIdentity(item);
-			var referenceObject = {_reference: identity};
-			return referenceObject;
+			return {_reference: this.getIdentity(value)};
 		}else{
 			if(typeof value === "object"){
 				for(var type in this._datatypeMap){
@@ -577,15 +572,14 @@ dojo.declare("dojo.data.ItemFileWriteStore", dojo.data.ItemFileReadStore, {
 				var serializableItem = {};
 				for(var key in item){
 					if(key !== this._storeRefPropName && key !== this._itemNumPropName && key !== this._reverseRefMap && key !== this._rootItemPropName){
-						var attribute = key;
-						var valueArray = this.getValues(item, attribute);
+						var valueArray = this.getValues(item, key);
 						if(valueArray.length == 1){
-							serializableItem[attribute] = this._flatten(valueArray[0]);
+							serializableItem[key] = this._flatten(valueArray[0]);
 						}else{
 							var serializableArray = [];
 							for(var j = 0; j < valueArray.length; ++j){
 								serializableArray.push(this._flatten(valueArray[j]));
-								serializableItem[attribute] = serializableArray;
+								serializableItem[key] = serializableArray;
 							}
 						}
 					}
@@ -679,7 +673,7 @@ dojo.declare("dojo.data.ItemFileWriteStore", dojo.data.ItemFileReadStore, {
 			// Restore the original item into a full-fledged item again, we want to try to
 			// keep the same object instance as if we don't it, causes bugs like #9022.
 			copyOfItemState[this._storeRefPropName] = this;
-			for(key in modifiedItem){
+			for(var key in modifiedItem){
 				delete modifiedItem[key];
 			}
 			dojo.mixin(modifiedItem, copyOfItemState);
@@ -754,12 +748,9 @@ dojo.declare("dojo.data.ItemFileWriteStore", dojo.data.ItemFileReadStore, {
 		}else{
 			// return true if the store is dirty -- which means return true
 			// if there are any new items, dirty items, or modified items
-			if(!this._isEmpty(this._pending._newItems) ||
+			return !this._isEmpty(this._pending._newItems) ||
 				!this._isEmpty(this._pending._modifiedItems) ||
-				!this._isEmpty(this._pending._deletedItems)){
-				return true;
-			}
-			return false; // boolean
+				!this._isEmpty(this._pending._deletedItems); // boolean
 		}
 	},
 

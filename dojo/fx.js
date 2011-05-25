@@ -1,4 +1,4 @@
-define([".", "./fx/Toggler"], function(dojo) {
+define(["./main", "./fx/Toggler"], function(dojo) {
 	// module:
 	//		dojo/fx
 	// summary:
@@ -148,7 +148,7 @@ dojo.fx = {
 		//	|		dojo.fadeOut({ node:otherNode })
 		//	|	]).play();
 		//
-		return new _chain(animations) // dojo.Animation
+		return new _chain(animations); // dojo.Animation
 	};
 
 	var _combine = function(animations){

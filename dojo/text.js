@@ -30,7 +30,7 @@ define(["./_base/kernel", "./_base/xhr", "require", "./has"], function(dojo, xhr
 	var
 		theCache= {},
 
-		getCacheId= function(resourceId) {
+		getCacheId= function(resourceId, require) {
 			if(require.toAbsMid){
 				var match= resourceId.match(/(.+)(\.[^\/\.]+)$/);
 				return match ? require.toAbsMid(match[1]) + match[2] : require.toAbsMid(resourceId);
@@ -69,40 +69,50 @@ define(["./_base/kernel", "./_base/xhr", "require", "./has"], function(dojo, xhr
 				var
 					parts= id.split("!"),
 					resourceId= parts[0],
-					cacheId= getCacheId(resourceId),
-					strip= parts.length>1,
+					cacheId= getCacheId(resourceId, require),
+					stripFlag= parts.length>1,
 					url;
 				if(cacheId in theCache){
-					load(strip ? strip(theCache[cacheId]) : theCache[cacheId]);
+					load(stripFlag ? strip(theCache[cacheId]) : theCache[cacheId]);
 					return;
 				}
 				url= require.toUrl(resourceId);
 				if(url in theCache){
-					load(strip ? strip(theCache[url]) : theCache[url]);
+					load(stripFlag ? strip(theCache[url]) : theCache[url]);
 					return;
 				}
-				getText(url, !require.async, function(text){
-					cache(cacheId, url, text);
-					load(strip ? strip(theCache[url]) : theCache[url]);
-				});
+				var
+					inject= function(text){
+						cache(cacheId, url, text);
+						load(stripFlag ? strip(theCache[url]) : theCache[url]);
+					},
+					text;
+				try{
+					text= require("*text/" + cacheId);
+					if(text!==undefined){
+						inject(text);
+						return;
+					}
+				}catch(e){}
+				getText(url, !require.async, inject);
 			},
 
 			cache:function(cacheId, mid, type, value) {
-				cache(cacheId, require.nameToUrl(mid) + type, value);
+				cache(cacheId, require.toUrl(mid + type), value);
 			}
 		};
 
 		dojo.cache= function(/*String||Object*/module, /*String*/url, /*String||Object?*/value){
 			//	 * (string string [value]) => (module, url, value)
-			//	 * (object [value])				 => (module, value), url defaults to ""
+			//	 * (object [value])        => (module, value), url defaults to ""
 			//
 			//	 * if module is an object, then it must be convertable to a string
-			//	 * (module, url) must be legal arguments (once converted to strings iff required) to dojo.moduleUrl
+			//	 * (module, url) module + (url ? ("/" + url) : "") must be a legal argument to require.toUrl
 			//	 * value may be a string or an object; if an object then may have the properties "value" and/or "sanitize"
 			var key;
 			if(typeof module == "string"){
 				module = (module.replace(/\./g, "/") + (url ? ("/" + url) : "")).replace(/^dojo\//, "./");
-				key = require.nameToUrl(module);
+				key = require.toUrl(module);
 			}else{
 				key = module+"";
 				value = url;

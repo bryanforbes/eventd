@@ -1,4 +1,4 @@
-define(["..", "./util/filter", "./util/simpleFetch", "../date/stamp"], function(dojo) {
+define(["../main", "./util/filter", "./util/simpleFetch", "../date/stamp"], function(dojo) {
 	// module:
 	//		dojo/data/ItemFileReadStore
 	// summary:
@@ -502,8 +502,7 @@ dojo.declare("dojo.data.ItemFileReadStore", null,{
 			// 	|	true == valueIsAnItem({name:'Kermit', color:'green'});
 			// 	|	true == valueIsAnItem({iggy:'pop'});
 			// 	|	true == valueIsAnItem({foo:42});
-			var isItem = (
-				(aValue !== null) &&
+			return (aValue !== null) &&
 				(typeof aValue === "object") &&
 				(!dojo.isArray(aValue) || addingArrays) &&
 				(!dojo.isFunction(aValue)) &&
@@ -511,9 +510,7 @@ dojo.declare("dojo.data.ItemFileReadStore", null,{
 				(typeof aValue._reference === "undefined") &&
 				(typeof aValue._type === "undefined") &&
 				(typeof aValue._value === "undefined") &&
-				self.hierarchical
-			);
-			return isItem;
+				self.hierarchical;
 		}
 
 		function addItemAndSubItemsToArrayOfAllItems(/* Item */ anItem){

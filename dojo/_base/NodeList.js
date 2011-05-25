@@ -1,4 +1,4 @@
-define(["./kernel", "../listen", "./lang", "./array", "./html"], function(dojo, listen){
+define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
   //  module:
   //    dojo/_base/NodeList
   //  summary:
@@ -267,7 +267,7 @@ define(["./kernel", "../listen", "./lang", "./array", "./html"], function(dojo, 
 			//multiple refNodes. Also, need a real array, not a NodeList from the
 			//DOM since the node movements could change those NodeLists.
 
-			var parse = content.parse === true ? true : false;
+			var parse = content.parse === true;
 
 			//Do we have an object that needs to be run through a template?
 			if(typeof content.template == "string"){
@@ -387,9 +387,9 @@ define(["./kernel", "../listen", "./lang", "./array", "./html"], function(dojo, 
 			//		Because on supports CSS selector syntax, we can use comma-delimited events as well:
 			//		| dojo.query("#my-list").on("li button:mouseover, li:click", listener);
 			var handles = this.map(function(node){
-				return listen(node, eventName, listener); // TODO: apply to the NodeList so the same selector engine is used for matches
+				return on(node, eventName, listener); // TODO: apply to the NodeList so the same selector engine is used for matches
 			});
-			handles.cancel = function(){
+			handles.cancel= function(){
 				for(var i = 0; i < handles.length; i++){
 					handles[i].cancel();
 				}
