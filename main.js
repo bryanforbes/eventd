@@ -1,4 +1,4 @@
-define(['dojo/_base/declare', 'dojo/listen', './Deferred', 'dojo/_base/html', 'dojo/_base/window'], function(declare, listen, Deferred, dojo){
+define(['dojo/_base/declare', 'dojo/on', './Deferred', 'dojo/_base/html', 'dojo/_base/window'], function(declare, on, Deferred, dojo){
 
 	var op = Object.prototype,
 		opts = op.toString,
@@ -73,6 +73,10 @@ define(['dojo/_base/declare', 'dojo/listen', './Deferred', 'dojo/_base/html', 'd
 		};
 	}
 
+	function dispatch(event, node, options){
+		return (new event(node, options))._dispatch();
+	}
+
 	var Event = declare(null, {
 		node: null,
 		type: null,
@@ -103,7 +107,7 @@ define(['dojo/_base/declare', 'dojo/listen', './Deferred', 'dojo/_base/html', 'd
 			var d = Deferred.event(this.node, this.type, this.asyncDeferred);
 
 			var res = this._dispatch();
-			!res && this.postDispatch(d);
+			res && this.postDispatch(d);
 
 			return d;
 		},
@@ -153,7 +157,7 @@ define(['dojo/_base/declare', 'dojo/listen', './Deferred', 'dojo/_base/html', 'd
 				};
 				this.node.dispatchEvent(event);
 
-				return prevented > 0;
+				return prevented === 0;
 			}
 		});
 	}
@@ -164,7 +168,7 @@ define(['dojo/_base/declare', 'dojo/listen', './Deferred', 'dojo/_base/html', 'd
 		}),
 		Focus: declare(Event, {
 			type: "focus",
-			asyncDeferred: true,
+			asyncDeferred: !!dojo.isIE,
 			create: function(){},
 			_dispatch: function(){
 				this.node.focus();
@@ -180,6 +184,7 @@ define(['dojo/_base/declare', 'dojo/listen', './Deferred', 'dojo/_base/html', 'd
 		Defaults: Defaults,
 		Event: Event,
 		Dispatcher: Dispatcher,
+		dispatch: dispatch,
 		events: events
 	};
 });

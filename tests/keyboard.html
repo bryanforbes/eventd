@@ -1,0 +1,52 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Eventd keyboard test</title>
+	<style>
+		textarea {
+			width: 300px;
+			height: 200px;
+		}
+	</style>
+	<script>
+		var dojoConfig = {
+			async: true,
+			packages: [{
+				name: 'eventd',
+				location: '../../..',
+				lib: '.'
+			}]
+		};
+	</script>
+	<script src="dojo/dojo/dojo.js"></script>
+	<script>
+		var key;
+		require(['eventd/mouse', 'eventd/keyboard'], function(mouse, keyboard){
+			key = keyboard;
+			dojo.byId("txt").value = "";
+			setTimeout(function(){
+				mouse.click("txt").then.delay(function(){
+					keyboard.keystrokes("txt", "Bryan Forbes\r\b\r").then.delay(function(){
+						mouse.click("txta").then.delay(function(){
+							keyboard.keystrokes("txta", "Bryan Forbes\rasdf\b\b\rasdf");
+						}, 500);
+					}, 500);
+				}, 500);
+			},500);
+		});
+
+		require(['dojo', 'dojo/on'], function(dojo, on){
+			dojo.forEach(["keydown", "keypress", "keyup", "change", "textInput", "input"], function(type){
+				on(dojo.byId("txt"), type, function(evt){
+					console.log(evt.type, evt.keyCode, evt.charCode);
+				});
+			});
+		});
+	</script>
+</head>
+<body>
+	<input id="txt" />
+	<textarea id="txta"></textarea>
+</body>
+</html>

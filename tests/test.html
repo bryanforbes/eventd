@@ -16,18 +16,25 @@
 	<script src="dojo/dojo/dojo.js"></script>
 	<script>
 		require(['eventd/mouse', 'eventd/keyboard'], function(mouse, keyboard){
-			mouse.click(dojo.byId("cbx")).then.delay(function(){
-				mouse.click(dojo.byId("txt")).then(function(){
-					keyboard.keystrokes(dojo.byId("txt"), "Bryan Forbes");
-				});
-			}, 500);
+			dojo.byId("cbx").checked = false;
+			dojo.byId("txt").value = "";
+			setTimeout(function(){
+				mouse.click("cbx").then.delay(function(){
+					mouse.click("txt").then.delay(function(){
+						keyboard.keystrokes("txt", "Bryan Forbes");
+					}, 500);
+				}, 500);
+			},500);
 		});
 
-		require(['dojo', 'dojo/listen'], function(dojo, listen){
-			listen(dojo.byId("container"), "mousemove", function(evt){
+		require(['dojo', 'dojo/on'], function(dojo, on){
+			on(dojo.byId("container"), "mousemove", function(evt){
 				console.log(evt);
 			});
-			listen(dojo.byId("txt"), "keypress", function(evt){
+			on(dojo.byId("txt"), "keypress", function(evt){
+				console.log(evt);
+			});
+			on(dojo.byId("txt"), "change", function(evt){
 				console.log(evt);
 			});
 		});

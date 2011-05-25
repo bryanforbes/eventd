@@ -1,4 +1,4 @@
-define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo/_base/sniff', 'dojo/_base/connect'], function(declare, listen, eventd, dojo){
+define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_base/sniff', 'dojo/_base/connect', 'domReady!'], function(declare, on, eventd, dojo){
 	var KEY_CODE			= 1, // keyCode set to key code
 		KEY_CODE_CHAR_CODE	= 2, // keyCode set to character code
 		CHAR_CODE			= 4, // charCode set to character code
@@ -14,6 +14,10 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 			keydown:  KEY_CODE,
 			keypress: KEY_CODE,
 			keyup:    KEY_CODE
+		},
+		Backspace: {
+			keydown: KEY_CODE,
+			keyup: KEY_CODE
 		},
 		Special: {
 			keydown:  KEY_CODE,
@@ -37,6 +41,10 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 					keypress: defaults.Enter.keypress | CHAR_CODE,
 					keyup:	  defaults.Enter.keyup    | CHAR_CODE_ZERO
 				},
+				Backspace: {
+					keydown: defaults.Backspace.keydown | CHAR_CODE_ZERO,
+					keyup:	 defaults.Backspace.keyup	| CHAR_CODE_ZERO
+				},
 				Special: {
 					keydown:  defaults.Enter.keydown  | CHAR_CODE_ZERO,
 					keyup:	  defaults.Enter.keyup    | CHAR_CODE_ZERO
@@ -53,6 +61,11 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 					keydown:  defaults.Enter.keydown  | CHAR_CODE_ZERO,
 					keypress: defaults.Enter.keypress | CHAR_CODE_ZERO,
 					keyup:	  defaults.Enter.keyup    | CHAR_CODE_ZERO
+				},
+				Backspace: {
+					keydown:  defaults.Backspace.keydown | CHAR_CODE_ZERO,
+					keypress: KEY_CODE					 | CHAR_CODE_ZERO,
+					keyup:	  defaults.Backspace.keyup	 | CHAR_CODE_ZERO
 				},
 				Special: {
 					keydown:  defaults.Enter.keydown  | CHAR_CODE_ZERO,
@@ -85,8 +98,6 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 				type = this.type,
 				keyOptions;
 
-			delete this.key;
-
 			if(typeof key != "undefined"){
 				if(typeof key == "number" && dojo.indexOf(specials, key) > -1){
 					// dojo.keys.*
@@ -94,9 +105,16 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 					if(key == dojo.keys.ENTER){
 						key = '\r';
 						keyOptions = defaults.Enter[type];
+					}else if(key == dojo.keys.BACKSPACE){
+						key = '\b';
+						keyOptions = defaults.Backspace[type];
 					}else{
 						keyOptions = defaults.Special[type];
 					}
+				}else if(key == '\r'){
+					keyOptions = defaults.Enter[type];
+				}else if(key == '\b'){
+					keyOptions = defaults.Backspace[type];
 				}else{
 					keyOptions = defaults.characters[type];
 				}
@@ -177,11 +195,15 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 	var tests = {
 		pressChars: false,
 		pressCharsUnfocused: false,
+		pressEnterChange: false,
 		pressBackspace: false,
 		hasTextEvents: false,
 		textEventSetsValue: false,
 		textEventFiresInput: false
 	};
+
+	var dispatch = eventd.dispatch;
+
 	(function(){
 		var div = dojo.doc.createElement("div");
 		div.innerHTML = "<input type='input'/><input type='input'/>";
@@ -192,33 +214,44 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 			text2 = text1.nextSibling;
 
 		text1.focus();
-		(new events.KeyPress(text1, { key: dojo.keys.ENTER })).dispatch();
+		dispatch(events.KeyPress, text1, { key: dojo.keys.ENTER });
 
-		(new events.KeyPress(text1, { key: "s" })).dispatch();
+		dispatch(events.KeyPress, text1, { key: "s" });
 		tests.pressChars = text1.value == "s";
 
 		text1.value = "s";
 
-		(new events.KeyPress(text1, { key: dojo.keys.BACKSPACE })).dispatch();
+		dispatch(events.KeyPress, text1, { key: dojo.keys.BACKSPACE });
 		tests.pressBackspace = text1.value === "";
 
 		text2.focus();
-		(new events.KeyPress(text1, { key: "p" })).dispatch();
+		dispatch(events.KeyPress, text1, { key: "p" });
 		tests.pressCharsUnfocused = text1.value == "sp";
 
 		text1.focus();
 		text1.value = "";
+		var h;
 		try{
 			var e = dojo.doc.createEvent("TextEvent");
 			tests.hasTextEvents = typeof e.initTextEvent != "undefined";
 			e.initTextEvent("textInput", true, true, null, "asdf");
-			var h = listen(text1, "input", function(){
-				h.cancel();
+			h = on(text1, "input", function(){
 				tests.textEventFiresInput = true;
 			});
 			text1.dispatchEvent(e);
+			h.cancel();
 		}catch(err){}
 		tests.textEventSetsValue = text1.value == "asdf";
+
+		h = on(text1, "change", function(){
+			tests.pressEnterChange = true;
+		});
+		text1.focus();
+		text1.value = "";
+
+		dispatch(events.KeyPress, text1, { key: 'f' });
+		dispatch(events.KeyPress, text1, { key: '\r' });
+		h.cancel();
 
 		dojo.doc.documentElement.removeChild(div);
 	})();
@@ -239,6 +272,7 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 				return event;
 			}
 		});
+		events.TextInput = TextInput;
 		if(!tests.textEventFiresInput){
 			var Input = declare(eventd.Event, {
 				type: "input",
@@ -251,6 +285,7 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 					return event;
 				}
 			});
+			events.Input = Input;
 		}
 	}else if(!tests.pressChars){
 		events.KeyPress.extend({
@@ -264,7 +299,37 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 		});
 	}
 
-	var charRE = /^[A-Za-z ]$/;
+	if(!tests.pressBackspace){
+		if(typeof document.getSelection != "undefined"){
+			events.KeyDown.extend({
+				postDispatch: function(deferred){
+					if(this.options.key == dojo.keys.BACKSPACE || this.options.key == '\b'){
+						var node = this.node;
+						deferred.then(function(){
+							node.selectionStart = node.selectionEnd - 1;
+							document.execCommand("delete");
+						});
+					}
+				}
+			});
+		}else{
+			events.KeyDown.extend({
+				postDispatch: function(deferred){
+					if(this.options.key == dojo.keys.BACKSPACE || this.options.key == '\b'){
+						var node = this.node;
+						deferred.then(function(){
+							var sel = document.selection.createRange();
+							sel.moveStart("character", "-1");
+							sel.select();
+							document.execCommand("delete");
+						});
+					}
+				}
+			});
+		}
+	}
+
+	var charRE = /^[A-Za-z0-9 !@#$%^&*()_+-={}[\]:;"'`~,.\/<>?]$/;
 	function getSequence(node, character){
 		var sequence = [],
 			name = node.nodeName.toUpperCase();
@@ -288,10 +353,16 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 					sequence.push([Input]);
 				}
 			}
+			if(name == "INPUT" && !tests.pressEnterChange){
+				sequence.push([eventd.events.Change]);
+			}
 			sequence.push([events.KeyUp, { key: dojo.keys.ENTER }]);
 		}else if(character == "\b"){
-			sequence.push([events.KeyDown, { key: "Backspace" }]);
-			sequence.push([events.KeyUp, { key: "Backspace" }]);
+			sequence.push([events.KeyDown, { key: dojo.keys.BACKSPACE }]);
+			if(typeof defaults.Backspace.keypress != "undefined"){
+				sequence.push([events.KeyPress, { key: dojo.keys.BACKSPACE }]);
+			}
+			sequence.push([events.KeyUp, { key: dojo.keys.BACKSPACE }]);
 		}else if(character == "\t"){
 			sequence.push([events.KeyDown, { key: "Tab" }]);
 		}
@@ -321,7 +392,7 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 		return next();
 	}
 
-	var upperRE = /^[A-Z]$/,
+	var upperRE = /^[A-Z~!@#$%^&*()_+{}":?><]$/,
 		Dispatcher = eventd.Dispatcher;
 
 	return {
@@ -339,7 +410,7 @@ define(['dojo/_base/declare', 'dojo/listen', './main', 'dojo/_base/array', 'dojo
 			delayBetween = delayBetween || 50;
 			var sequence = [],
 				upper = false;
-			for(var i=0, character; character=characters[i]; i++){
+			for(var i=0, character; character=characters.charAt(i); i++){
 				if(!upper && upperRE.test(character)){
 					sequence.push([events.KeyDown, { key: dojo.keys.SHIFT }]);
 					upper = true;

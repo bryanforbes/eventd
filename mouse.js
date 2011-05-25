@@ -1,4 +1,4 @@
-define(['dojo/_base/declare', 'dojo/window', 'dojo/listen', './main', './Deferred', 'dojo/_base/array', 'dojo/_base/sniff', 'dojo/_base/fx'], function(declare, win, listen, eventd, Deferred, dojo){
+define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 'dojo/_base/array', 'dojo/_base/sniff', 'dojo/_base/fx', 'domReady!'], function(declare, win, on, eventd, Deferred, dojo){
 	var MouseDefaults = declare(eventd.Defaults, {
 		click: {
 			left: 0,
@@ -40,6 +40,18 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/listen', './main', './Deferre
 		}
 	})();
 
+	var getBox = (function(){
+		var body;
+		return function(){
+			if(dojo.body()){
+				getBox = function(){
+					return dojo.window.getBox();
+				};
+				return getBox();
+			}
+			return {};
+		};
+	})();
 	var MouseOptions = declare(eventd.Options, {
 		detail: 1,
 		screenX: 1,
@@ -56,7 +68,7 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/listen', './main', './Deferre
 		relatedTarget: null,
 
 		constructor: function(type, options){
-			var docEl = dojo.doc.documentElement, viewport = win.getBox() || {};
+			var docEl = dojo.doc.documentElement, viewport = getBox();
 
 			if(!this.clientX){
 				this.clientX = (this.pageX || 0) - (viewport.l || 0);
@@ -120,41 +132,53 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/listen', './main', './Deferre
 		mouseUDClicks:false,
 		clickFiresChange:false,
 		clickChecks:false,
+		clickSubmits:false,
 		changeChecks:false
 	};
+	var dispatch = eventd.dispatch;
 	(function(){
 		var div = dojo.doc.createElement("div");
-		div.innerHTML = "<input type='checkbox'/>";
+		div.innerHTML = "<form><input type='checkbox'/><input type='submit' name='s'/></form>";
 		div.style.position = "absolute";
 		div.style.top = "-4000px";
 		div.style.left = "-4000px";
 
 		dojo.doc.documentElement.appendChild(div);
 
-		var h = listen(div, "click", function(){
+		var h = on(div, "click", function(){
 			tests.mouseUDClicks = true;
 		});
 
-		(new events.MouseDown(div, {}))._dispatch();
-		(new events.MouseUp(div, {}))._dispatch();
+		dispatch(events.MouseDown, div, {});
+		dispatch(events.MouseUp, div, {});
 
 		h.cancel();
 
-		var check = div.firstChild;
+		var check = div.firstChild.firstChild;
 
-		h = listen(check, "change", function(){
+		h = on(check, "change", function(){
 			tests.clickFiresChange = true;
 		});
-		(new events.Click(check, {}))._dispatch();
+		dispatch(events.Click, check, {});
 		tests.clickChecks = !!check.checked;
 		h.cancel();
 
 		check.checked = false;
-		h = listen(check, "change", function(){
+		h = on(check, "change", function(){
 			h.cancel();
 			tests.changeChecks = !!check.checked;
 		});
-		(new eventd.events.Change(check, {}))._dispatch();
+		dispatch(eventd.events.Change, check, {});
+
+		var submit = div.firstChild.firstChild.nextSibling;
+		div.firstChild.onsubmit = function(e){
+			if(e.preventDefault){
+				e.preventDefault();
+			}
+			tests.clickSubmits = true;
+			return false;
+		};
+		(new events.Click(submit, {}))._dispatch();
 
 		dojo.doc.documentElement.removeChild(div);
 	})();
@@ -166,7 +190,7 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/listen', './main', './Deferre
 			preCreate: function(){
 				var name = this.node.nodeName.toLowerCase();
 				if(name == "select" || name == "option"){
-					var h = listen(this.node, "mousedown", function(evt){
+					var h = on(this.node, "mousedown", function(evt){
 						h.cancel();
 						evt.preventDefault();
 					});

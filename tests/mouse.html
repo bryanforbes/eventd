@@ -29,35 +29,37 @@
 		<div id="container2" style="width: 100px; height: 100px; border: 1px solid blue;"></div>
 	</div>
 	<script>
-		require(['dojo', 'dojo/listen', 'eventd', 'eventd/mouse'], function(dojo, listen, eventd, mouse){
-			/*listen(dojo.byId("container"), "mousemove", function(evt){
+		require(['dojo', 'dojo/on', 'eventd', 'eventd/mouse'], function(dojo, on, eventd, mouse){
+			/*on(dojo.byId("container"), "mousemove", function(evt){
 				console.log("Move", evt);
 			});*/
-			listen(dojo.body(), "mouseover", function(evt){
+			on(dojo.body(), "mouseover", function(evt){
 				console.log("Over", evt.target);
 				dojo.addClass(evt.target, "over");
 			});
-			listen(dojo.body(), "mouseout", function(evt){
+			on(dojo.body(), "mouseout", function(evt){
 				console.log("Out", evt.target);
 				dojo.removeClass(evt.target, "over");
 			});
-			listen(dojo.byId("container"), "mouseenter", function(evt){
+			on(dojo.byId("container"), "mouseenter", function(evt){
 				console.log("Enter", evt.target);
 			});
-			listen(dojo.byId("container"), "mouseleave", function(evt){
+			on(dojo.byId("container"), "mouseleave", function(evt){
 				console.log("Leave", evt.target);
 			});
-			listen(dojo.byId("container"), "mousemove", function(evt){
+			on(dojo.byId("container"), "mousemove", function(evt){
 				console.log("Move", evt.target);
 			});
 
-			mouse.click(dojo.byId("cbx")).then.delay(function(){
-				mouse.click(dojo.byId("cbx")).then(function(){
-					mouse.mouseover(dojo.byId("container2")).then(function(){
-						mouse.mouseover(dojo.byId("container"));
+			dojo.byId("cbx").checked = false;
+
+			setTimeout(function(){
+				mouse.click(dojo.byId("cbx")).then.delay(function(){
+					mouse.click(dojo.byId("cbx")).then(function(){
+						mouse.move(300, 300, 2000, true);
 					});
-				});
-			},1000);
+				},1000);
+			},500);
 		});
 	</script>
 </body>
