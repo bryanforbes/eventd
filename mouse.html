@@ -8,6 +8,22 @@
 			width: 400px;
 			height: 200px;
 		}
+		div {
+			background-color: white;
+		}
+		div.over {
+			background-color: red;
+		}
+		#container {
+			width: 200px;
+			height: 200px;
+			border: 1px solid black;
+		}
+		#inner_container {
+			width: 100px;
+			height: 100px;
+			border: 1px solid blue;
+		}
 	</style>
 	<script>
 		var dojoConfig = {
@@ -21,7 +37,7 @@
 	</script>
 	<script src="dojo/dojo.js"></script>
 	<script>
-		require(['dojo', 'dojo/listen', 'eventd/mouse'], function(dojo, listen, mouse){
+		require(['dojo', 'dojo/on', 'eventd/mouse'], function(dojo, on, mouse){
 			var logIt = (function(){
 				var output = dojo.byId("output");
 
@@ -40,28 +56,50 @@
 				};
 			})();
 
-			function listenMouseEvents(id){
+			function onMouseEvents(id){
 				var node = dojo.byId(id);
-				listen(node, "mousedown", function(evt){
+				on(node, "mousedown", function(evt){
 					logIt(id, "mousedown", evt);
 				});
-				listen(node, "mouseup", function(evt){
+				on(node, "mouseup", function(evt){
 					logIt(id, "mouseup", evt);
 				});
-				listen(node, "change", function(evt){
+				on(node, "change", function(evt){
 					logIt(id, "change", evt);
 				});
-				listen(node, "click", function(evt){
+				on(node, "click", function(evt){
 					logIt(id, "click", evt);
 				});
 			}
 
-			listenMouseEvents("chk1");
-			listenMouseEvents("chk2");
+			function onMoveEvents(id){
+				id = dojo.byId(id);
+				on(id, "mouseenter", function(evt){
+					console.log("Enter", evt.target);
+				});
+				on(id, "mouseleave", function(evt){
+					console.log("Leave", evt.target);
+				});
+				on(id, "mousemove", function(evt){
+					console.log("Move", evt.target);
+				});
+			}
+
+			onMouseEvents("chk1");
+			onMouseEvents("chk2");
+
+			on(dojo.body(), "mouseover", function(evt){
+				dojo.addClass(evt.target, "over");
+			});
+			on(dojo.body(), "mouseout", function(evt){
+				dojo.removeClass(evt.target, "over");
+			});
 
 			mouse.click("chk1").then.delay(function(){
 				mouse.click("chk2").then.delay(function(){
-					mouse.click("chk1");
+					mouse.click("chk1").then.delay(function(){
+						mouse.move(300, 300, 2000, true);
+					},1000);
 				},1000);
 			},1000);
 		});
@@ -70,6 +108,9 @@
 <body>
 	<input id="chk1" type="checkbox">
 	<input id="chk2" type="checkbox">
+	<div id="container">
+		<div id="inner_container"></div>
+	</div>
 
 	<div>
 		Output:<br>
