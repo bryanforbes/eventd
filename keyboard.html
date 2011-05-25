@@ -21,7 +21,7 @@
 	</script>
 	<script src="dojo/dojo.js"></script>
 	<script>
-		require(['dojo', 'dojo/listen', 'eventd/mouse', 'eventd/keyboard'], function(dojo, listen, mouse, keyboard){
+		require(['dojo', 'dojo/on', 'eventd/mouse', 'eventd/keyboard'], function(dojo, on, mouse, keyboard){
 			var logIt = (function(){
 				var output = dojo.byId("output");
 
@@ -40,26 +40,26 @@
 				};
 			})();
 
-			function listenMouseEvents(id){
+			function onKeyEvents(id){
 				var node = dojo.byId(id);
-				listen(node, "keydown", function(evt){
+				on(node, "keydown", function(evt){
 					logIt(id, "keydown", evt);
 				});
-				listen(node, "keyup", function(evt){
+				on(node, "keyup", function(evt){
 					logIt(id, "keyup", evt);
 				});
-				listen(node, "keypress", function(evt){
+				on(node, "keypress", function(evt){
 					logIt(id, "keypress", evt);
 				});
-				listen(node, "textInput", function(evt){
+				on(node, "textInput", function(evt){
 					logIt(id, "textInput", evt);
 				});
-				listen(node, "input", function(evt){
+				on(node, "input", function(evt){
 					logIt(id, "input", evt);
 				});
 			}
 
-			listenMouseEvents("txt");
+			onKeyEvents("txt");
 
 			mouse.click("txt").then.delay(function(){
 				keyboard.keystrokes("txt", "Bryan Forbes");
