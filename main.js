@@ -1,4 +1,12 @@
-define(['dojo/_base/declare', 'dojo/on', './Deferred', 'dojo/_base/html', 'dojo/_base/window'], function(declare, on, Deferred, dojo){
+define([
+	'./Deferred',
+	'dojo/_base/declare',
+	'dojo/on',
+	'dojo/dom/dom',
+	'dojo/_base/window',
+	'dojo/_base/lang',
+	'dojo/_base/sniff'
+], function(Deferred, declare, on, dom, win, lang, has){
 
 	var op = Object.prototype,
 		opts = op.toString,
@@ -21,7 +29,7 @@ define(['dojo/_base/declare', 'dojo/on', './Deferred', 'dojo/_base/html', 'dojo/
 			}
 
 			if(!this.view){
-				this.view = dojo.global;
+				this.view = win.global;
 			}
 		},
 
@@ -58,7 +66,7 @@ define(['dojo/_base/declare', 'dojo/on', './Deferred', 'dojo/_base/html', 'dojo/
 			for(var def in this){
 				if(!(def in op) && def in specifics){
 					if(typeof this[def] == "object" && typeof specifics[def] == "object"){
-						this[def] = dojo.delegate(this[def], specifics[def]);
+						this[def] = lang.delegate(this[def], specifics[def]);
 					}else{
 						this[def] = specifics[def];
 					}
@@ -77,6 +85,14 @@ define(['dojo/_base/declare', 'dojo/on', './Deferred', 'dojo/_base/html', 'dojo/
 		return (new event(node, options))._dispatch();
 	}
 
+	function getNode(node){
+		if(typeof node != "string"){
+			return node.focusNode || node.domNode || node;
+		}else{
+			return dom.byId(node);
+		}
+	}
+
 	var Event = declare(null, {
 		node: null,
 		type: null,
@@ -89,7 +105,7 @@ define(['dojo/_base/declare', 'dojo/on', './Deferred', 'dojo/_base/html', 'dojo/
 		optionsConstructor: Options,
 
 		constructor: function(node, options, dontCreate){
-			this.node = dojo.byId(node);
+			this.node = dom.byId(node);
 
 			this.originalOptions = options;
 			this.options = new this.optionsConstructor(this.type, options);
@@ -114,7 +130,7 @@ define(['dojo/_base/declare', 'dojo/on', './Deferred', 'dojo/_base/html', 'dojo/
 		postDispatch: function(){}
 	});
 
-	if(dojo.doc.createEventObject){
+	if(win.doc.createEventObject){
 		Event.extend({
 			create: function(){
 				var event = this.node.ownerDocument.createEventObject();
@@ -123,7 +139,7 @@ define(['dojo/_base/declare', 'dojo/on', './Deferred', 'dojo/_base/html', 'dojo/
 			},
 			_dispatch: function(){
 				try{
-					dojo.global.event = this._event;
+					win.global.event = this._event;
 				}catch(e){}
 				// a sourceIndex greater than 0 means the node is in the document
 				if(this.node.sourceIndex > 0){
@@ -137,9 +153,9 @@ define(['dojo/_base/declare', 'dojo/on', './Deferred', 'dojo/_base/html', 'dojo/
 			create: function(){
 				var event;
 				try{
-					event = dojo.doc.createEvent("Events");
+					event = win.doc.createEvent("Events");
 				}catch(e){
-					event = dojo.doc.createEvent("UIEvents");
+					event = win.doc.createEvent("UIEvents");
 				}
 				event.initEvent(this.type, this.options.bubbles, this.options.cancelable);
 				this.options.copyToEvent(event);
@@ -168,7 +184,7 @@ define(['dojo/_base/declare', 'dojo/on', './Deferred', 'dojo/_base/html', 'dojo/
 		}),
 		Focus: declare(Event, {
 			type: "focus",
-			asyncDeferred: !!dojo.isIE,
+			asyncDeferred: !!has("ie"),
 			create: function(){},
 			_dispatch: function(){
 				this.node.focus();
@@ -180,6 +196,7 @@ define(['dojo/_base/declare', 'dojo/on', './Deferred', 'dojo/_base/html', 'dojo/
 		change: Dispatcher(events.Change),
 		focus: Dispatcher(events.Focus),
 
+		getNode: getNode,
 		Options: Options,
 		Defaults: Defaults,
 		Event: Event,

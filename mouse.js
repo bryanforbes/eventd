@@ -1,4 +1,17 @@
-define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 'dojo/_base/array', 'dojo/_base/sniff', 'dojo/_base/fx', 'domReady!'], function(declare, win, on, eventd, Deferred, dojo){
+define([
+	'./main',
+	'./Deferred',
+	'dojo/_base/declare',
+	'dojo/_base/sniff',
+	'dojo/on',
+	'dojo/_base/window',
+	'dojo/window',
+	'dojo/_base/array',
+	'dojo/dom/geometry',
+	'dojo/dom/construct',
+	'dojo/_base/fx',
+	'dojo/domReady!'
+], function(eventd, Deferred, declare, has, on, win, dwin, array, geom, constr, fx){
 	var MouseDefaults = declare(eventd.Defaults, {
 		click: {
 			left: 0,
@@ -19,7 +32,7 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 	});
 
 	var defaults = (function(undefined){
-		if(dojo.isIE){
+		if(has("ie")){
 			return new MouseDefaults({
 				mousedown: {
 					left: 1
@@ -31,7 +44,7 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 					right: 0
 				}
 			});
-		}else if(dojo.isOpera){
+		}else if(has("opera")){
 			return new MouseDefaults({
 				contextmenu: undefined 
 			});
@@ -43,9 +56,9 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 	var getBox = (function(){
 		var body;
 		return function(){
-			if(dojo.body()){
+			if(win.body()){
 				getBox = function(){
-					return dojo.window.getBox();
+					return dwin.getBox();
 				};
 				return getBox();
 			}
@@ -68,7 +81,7 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 		relatedTarget: null,
 
 		constructor: function(type, options){
-			var docEl = dojo.doc.documentElement, viewport = getBox();
+			var docEl = win.doc.documentElement, viewport = getBox();
 
 			if(!this.clientX){
 				this.clientX = (this.pageX || 0) - (viewport.l || 0);
@@ -90,7 +103,7 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 	var MouseEvent = declare(eventd.Event, {
 		optionsConstructor: MouseOptions
 	});
-	if(dojo.doc.createEvent){
+	if(win.doc.createEvent){
 		MouseEvent.extend({
 			create: function(){
 				var event,
@@ -113,7 +126,7 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 
 	var events = {};
 
-	dojo.forEach(["MouseDown", "MouseUp", "Click", "DblClick", "MouseMove", "MouseOver", "MouseOut"],
+	array.forEach(["MouseDown", "MouseUp", "Click", "DblClick", "MouseMove", "MouseOver", "MouseOut"],
 		function(name){
 			events[name] = declare(MouseEvent, {
 				type: name.toLowerCase()
@@ -137,13 +150,13 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 	};
 	var dispatch = eventd.dispatch;
 	(function(){
-		var div = dojo.doc.createElement("div");
+		var div = win.doc.createElement("div");
 		div.innerHTML = "<form><input type='checkbox'/><input type='submit' name='s'/></form>";
 		div.style.position = "absolute";
 		div.style.top = "-4000px";
 		div.style.left = "-4000px";
 
-		dojo.doc.documentElement.appendChild(div);
+		win.doc.documentElement.appendChild(div);
 
 		var h = on(div, "click", function(){
 			tests.mouseUDClicks = true;
@@ -152,7 +165,7 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 		dispatch(events.MouseDown, div, {});
 		dispatch(events.MouseUp, div, {});
 
-		h.cancel();
+		h.remove();
 
 		var check = div.firstChild.firstChild;
 
@@ -161,11 +174,11 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 		});
 		dispatch(events.Click, check, {});
 		tests.clickChecks = !!check.checked;
-		h.cancel();
+		h.remove();
 
 		check.checked = false;
 		h = on(check, "change", function(){
-			h.cancel();
+			h.remove();
 			tests.changeChecks = !!check.checked;
 		});
 		dispatch(eventd.events.Change, check, {});
@@ -180,18 +193,18 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 		};
 		(new events.Click(submit, {}))._dispatch();
 
-		dojo.doc.documentElement.removeChild(div);
+		win.doc.documentElement.removeChild(div);
 	})();
 
 	// These need to be attached after feature tests so they don't run
 	// during the tests
-	if(dojo.isSafari){
+	if(has("safari")){
 		events.MouseDown.extend({
 			preCreate: function(){
 				var name = this.node.nodeName.toLowerCase();
 				if(name == "select" || name == "option"){
 					var h = on(this.node, "mousedown", function(evt){
-						h.cancel();
+						h.remove();
 						evt.preventDefault();
 					});
 				}
@@ -238,7 +251,7 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 			typeof options.clientY == "undefined" &&
 			typeof options.pageX == "undefined" &&
 			typeof options.pageY == "undefined"){
-			var pos = dojo.position(node);
+			var pos = geom.position(node);
 			options.pageX = pos.x + (pos.w / 2);
 			options.pageY = pos.y + (pos.h / 2);
 		}
@@ -248,12 +261,11 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 		click = Dispatcher(events.Click),
 		dblclick = Dispatcher(events.DblClick),
 		mouseout = Dispatcher(events.MouseOut),
-		mouseover = Dispatcher(events.MouseOver),
-		mousemove = Dispatcher(events.MouseMove);
+		mouseover = Dispatcher(events.MouseOver);
 
 	function XYLine(startX, endX, startY, endY){
-		this.xLine = new dojo._Line(startX, endX);
-		this.yLine = new dojo._Line(startY, endY);
+		this.xLine = new fx._Line(startX, endX);
+		this.yLine = new fx._Line(startY, endY);
 	}
 	XYLine.prototype.getValue = function(/* float */ n){
 		return {
@@ -262,13 +274,20 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 		};
 	};
 
-	var mouse = {
-		mousedown: Dispatcher(events.MouseDown),
-		mouseup: Dispatcher(events.MouseUp),
-		click: function(node, options){
+	function wrapEvent(func){
+		return function(node, options){
+			node = eventd.getNode(node);
 			options = options || {};
 			addPosition(node, options);
 
+			return func(node, options);
+		};
+	}
+
+	var mouse = {
+		mousedown: wrapEvent(Dispatcher(events.MouseDown)),
+		mouseup: wrapEvent(Dispatcher(events.MouseUp)),
+		click: wrapEvent(function(node, options){
 			if(tests.mouseUDClicks){
 				// click fires automatically in Opera, so run
 				// preCreate and postDispatch
@@ -287,43 +306,29 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 					}
 				});
 			});
-		},
-		dblclick: function(node, options){
-			options = options || {};
-			addPosition(node, options);
-
+		}),
+		dblclick: wrapEvent(function(node, options){
 			return mouse.click(node, options).then(function(){
 				return mouse.click(node, options).then(function(){
 					return dblclick(node, options);
 				});
 			});
-		},
+		}),
 		_overTarget: null,
-		mouseover: function(node, options){
-			options = options || {};
-			addPosition(node, options);
-
+		mouseover: wrapEvent(function(node, options){
 			if(mouse._overTarget){
 				mouse.mouseout(mouse._overTarget);
 			}
 			return mouseover(node, options).then(function(){
 				mouse._overTarget = node;
 			});
-		},
-		mouseout: function(node, options){
-			options = options || {};
-			addPosition(node, options);
-
+		}),
+		mouseout: wrapEvent(function(node, options){
 			return mouseout(node, options).then(function(){
 				mouse._overTarget = null;
 			});
-		},
-		mousemove: function(node, options){
-			options = options || {};
-			addPosition(node, options);
-
-			return mousemove(node, options);
-		},
+		}),
+		mousemove: wrapEvent(Dispatcher(events.MouseMove)),
 		_current: { x: 0, y: 0 },
 		move: (function(){
 			function outOver(last, current){
@@ -340,9 +345,9 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 					d, res = new Deferred(function(){
 						a && a.stop();
 					});
-				var a = new dojo.Animation({
+				var a = new fx.Animation({
 					curve: new XYLine(mouse._current.x, clientX, mouse._current.y, clientY),
-					duration: duration || dojo.Animation.prototype.duration,
+					duration: duration || fx.Animation.prototype.duration,
 					onAnimate: function(values){
 						var node = document.elementFromPoint(values.x, values.y);
 						if(lastNode){
@@ -370,9 +375,9 @@ define(['dojo/_base/declare', 'dojo/window', 'dojo/on', './main', './Deferred', 
 
 						if(trace){
 							d.then(function(){
-								var n = dojo.create("div", {});
+								var n = constr.create("div", {});
 								n.style.cssText = "width: 2px; height: 2px; background-color: blue; position: absolute; left: " + values.x + "px; top: " + values.y + "px;";
-								dojo.body().appendChild(n);
+								win.body().appendChild(n);
 							});
 						}
 					},
