@@ -21,9 +21,9 @@
 	</script>
 	<script src="dojo/dojo.js"></script>
 	<script>
-		require(['dojo', 'dojo/on', 'eventd/mouse', 'eventd/keyboard'], function(dojo, on, mouse, keyboard){
+		require(['eventd/mouse', 'eventd/keyboard', 'dojo/on', 'dojo/dom/dom'], function(mouse, keyboard, on, dom){
 			var logIt = (function(){
-				var output = dojo.byId("output");
+				var output = dom.byId("output");
 
 				return function(){
 					var str = "";
@@ -41,7 +41,7 @@
 			})();
 
 			function onKeyEvents(id){
-				var node = dojo.byId(id);
+				var node = dom.byId(id);
 				on(node, "keydown", function(evt){
 					logIt(id, "keydown", evt);
 				});

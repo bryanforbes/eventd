@@ -1,9 +1,8 @@
-define(["../has", "../_base/kernel"], 
-		function(has, dojo){	
+define(["../has", "../_base/kernel"], function(has, dojo){
 "use strict";
 // summary:
 //		A small lightweight query selector engine that implements CSS2.1 selectors 
-// 		minus pseudo-classes, plus CSS3 attribute selectors
+// 		minus pseudo-classes and the sibling combinator, plus CSS3 attribute selectors
 var testDiv = document.createElement("div");
 var matchesSelector = testDiv.matchesSelector || testDiv.webkitMatchesSelector || testDiv.mozMatchesSelector || testDiv.msMatchesSelector || testDiv.oMatchesSelector; // IE9, WebKit, Firefox have this, but not Opera yet
 var querySelectorAll = testDiv.querySelectorAll;
@@ -160,7 +159,7 @@ if(!has("dom-matches-selector")){
 				// it is quoted, do an eval to parse the string (CSS and JS parsing are close enough)
 				value = eval(value);
 			}
-			var comparator = attrComparators[type];
+			var comparator = attrComparators[type || ""];
 			return function(node){
 				var attrValue = node.getAttribute(name);
 				return attrValue && comparator(attrValue, value);

@@ -1,19 +1,21 @@
-define(["./kernel", "../has", "require"], function(dojo, has, require) {
+define(["./kernel", "../has", "require", "./json"], function(dojo, has, require, json) {
 	// module:
 	//		dojo/_base/lader
 	// summary:
 	//		This module defines the v1.x synchronous loader API.
 
+	// signal the loader in sync mode...
+	//>>pure-amd
+
 	if (!has("dojo-loader")){
 		console.error("cannot load the Dojo v1.x loader with a foreign loader");
-		return;
+		return 0;
 	}
 
-	has.add("dojo-loader", 1, 0, 1);
-
-	var dojoRequire = require.getDojoLoader(dojo, dojo.dijit, dojo.dojox);
+	var dojoRequire = require.getDojoLoader(dojo, require);
 
 	has.add("config-publishRequireResult", 1, 0, 0);
+
 	dojo.require = function(moduleName, omitModuleCheck) {
 		var result = dojoRequire(moduleName);
 		if (!omitModuleCheck && !result) {
@@ -77,7 +79,7 @@ define(["./kernel", "../has", "require"], function(dojo, has, require) {
 		//		"common" array will *always* be loaded, regardless of which
 		//		list is chosen.
 		//	example:
-		//		|	dojo.platformRequire({
+ 		//		|	dojo.platformRequire({
 		//		|		browser: [
 		//		|			"foo.sample", // simple module
 		//		|			"foo.test",
@@ -121,4 +123,6 @@ define(["./kernel", "../has", "require"], function(dojo, has, require) {
 
 	// FIXME: this dependency needs to be removed from the demos
 	dojo._getText = require.getText;
+
+	return dojo;
 });

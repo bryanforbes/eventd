@@ -168,7 +168,7 @@ dojo.disconnect = dojo.unsubscribe = function(/*Handle*/ handle){
 	// handle:
 	//		the return value of the dojo.connect call that created the connection.
 	if(handle){
-		handle.cancel();
+		handle.remove();
 	}
 };
 
@@ -191,17 +191,17 @@ dojo.subscribe = function(/*String*/ topic, /*Object|null*/ context, /*String|Fu
 	return on(topic, dojo.hitch(context, method));
 };
 /*=====
-dojo.unsubscribe = function(/*Handle handle){
+dojo.unsubscribe = function(handle){
 	//	summary:
 	//		Remove a topic listener.
-	//	handle:
+	//	handle: Handle
 	//		The handle returned from a call to subscribe.
 	//	example:
 	//	|	var alerter = dojo.subscribe("alerts", null, function(caption, message){ alert(caption + "\n" + message); };
 	//	|	...
 	//	|	dojo.unsubscribe(alerter);
 	if(handle){
-		handle.cancel();
+		handle.remove();
 	}
 };
 =====*/
@@ -315,6 +315,10 @@ dojo.keys = {
 	F15: 126,
 	NUM_LOCK: 144,
 	SCROLL_LOCK: 145,
+	UP_DPAD: 175,
+	DOWN_DPAD: 176,
+	LEFT_DPAD: 177,
+	RIGHT_DPAD: 178,
 	// virtual key mapping
 	copyKey: dojo.isMac && !dojo.isAIR ? (dojo.isSafari ? 91 : 224 ) : 17
 };
@@ -406,14 +410,13 @@ if(has("events-keypress-typed")){
 			return listener.call(this, evt);
 		});
 		return {
-			cancel: function(){
-				keydownSignal.cancel();
-				keypressSignal.cancel();
+			remove: function(){
+				keydownSignal.remove();
+				keypressSignal.remove();
 			}
 		};
 	};
-}
-else{
+}else{
 	if(dojo.isOpera){ // TODO: how to feature detect this behavior?
 		keypress = function(object, listener){
 			return on(object, "keypress", function(evt){

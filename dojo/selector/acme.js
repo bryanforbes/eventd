@@ -4,8 +4,6 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
   //  summary:
   //    This module defines the Acme selector engine
 
-	var d = dojo;
-
 /*
 	acme architectural overview:
 
@@ -47,27 +45,22 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 	// need to provide these methods and properties. No other porting should be
 	// necessary, save for configuring the system to use a class other than
 	// dojo.NodeList as the return instance instantiator
-	var trim = 			d.trim;
-	var each = 			d.forEach;
+	var trim = 			dojo.trim;
+	var each = 			dojo.forEach;
 	// 					d.isIE; // float
 	// 					d.isSafari; // float
 	// 					d.isOpera; // float
 	// 					d.isWebKit; // float
 	// 					d.doc ; // document element
 
-	var getDoc = function(){ return d.doc; };
+	var getDoc = function(){ return dojo.doc; };
 	// NOTE(alex): the spec is idiotic. CSS queries should ALWAYS be case-sensitive, but nooooooo
-	var cssCaseBug = ((d.isWebKit||d.isMozilla) && ((getDoc().compatMode) == "BackCompat"));
+	var cssCaseBug = ((dojo.isWebKit||dojo.isMozilla) && ((getDoc().compatMode) == "BackCompat"));
 
 	////////////////////////////////////////////////////////////////////////
 	// Global utilities
 	////////////////////////////////////////////////////////////////////////
 
-
-	// on browsers that support the "children" collection we can avoid a lot of
-	// iteration on chaff (non-element) nodes.
-	// why.
-	var childNodesName = !!getDoc().firstChild["children"] ? "children" : "childNodes";
 
 	var specials = ">~+";
 
@@ -514,7 +507,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 	var getNodeIndex = function(node){
 		var root = node.parentNode;
 		var i = 0,
-			tret = root[childNodesName],
+			tret = root.children || root.childNodes,
 			ci = (node["_i"]||-1),
 			cl = (root["_l"]||-1);
 
@@ -657,7 +650,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 		}
 	};
 
-	var defaultGetter = (d.isIE && (d.isIE < 9 || dojo.isQuirks)) ? function(cond){
+	var defaultGetter = (dojo.isIE && (dojo.isIE < 9 || dojo.isQuirks)) ? function(cond){
 		var clc = cond.toLowerCase();
 		if(clc == "class"){ cond = "className"; }
 		return function(elem){
@@ -793,7 +786,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 		filterFunc = filterFunc||yesman;
 		return function(root, ret, bag){
 			// get an array of child elements, skipping text and comment nodes
-			var te, x = 0, tret = root[childNodesName];
+			var te, x = 0, tret = root.children || root.childNodes;
 			while(te = tret[x++]){
 				if(
 					_simpleNodeTest(te) &&
@@ -909,7 +902,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 					getSimpleFilterFunc(query, { el: 1, id: 1 });
 
 				retFunc = function(root, arr){
-					var te = d.byId(query.id, (root.ownerDocument||root));
+					var te = dojo.byId(query.id, (root.ownerDocument||root));
 					if(!te || !filterFunc(te)){ return; }
 					if(9 == root.nodeType){ // if root's a doc, we just return directly
 						return getArr(te, arr);
@@ -1088,7 +1081,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 	// We need te detect the right "internal" webkit version to make this work.
 	var wk = "WebKit/";
 	var is525 = (
-		d.isWebKit &&
+		dojo.isWebKit &&
 		(nua.indexOf(wk) > 0) &&
 		(parseFloat(nua.split(wk)[1]) > 528)
 	);
@@ -1096,13 +1089,13 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 	// IE QSA queries may incorrectly include comment nodes, so we throw the
 	// zipping function into "remove" comments mode instead of the normal "skip
 	// it" which every other QSA-clued browser enjoys
-	var noZip = d.isIE ? "commentStrip" : "nozip";
+	var noZip = dojo.isIE ? "commentStrip" : "nozip";
 
 	var qsa = "querySelectorAll";
 	var qsaAvail = (
 		!!getDoc()[qsa] &&
 		// see #5832
-		(!d.isSafari || (d.isSafari > 3.1) || is525 )
+		(!dojo.isSafari || (dojo.isSafari > 3.1) || is525 )
 	);
 
 	//Don't bother with n+3 type of matches, IE complains if we modify those.
@@ -1149,7 +1142,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 			//		http://www.w3.org/TR/css3-selectors/#w3cselgrammar
 			(specials.indexOf(qcz) == -1) &&
 			// IE's QSA impl sucks on pseudos
-			(!d.isIE || (query.indexOf(":") == -1)) &&
+			(!dojo.isIE || (query.indexOf(":") == -1)) &&
 
 			(!(cssCaseBug && (query.indexOf(".") >= 0))) &&
 
@@ -1224,7 +1217,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 	// NOTE:
 	//		this function is Moo inspired, but our own impl to deal correctly
 	//		with XML in IE
-	var _nodeUID = d.isIE ? function(node){
+	var _nodeUID = dojo.isIE ? function(node){
 		if(caseSensitive){
 			// XML docs don't have uniqueID on their nodes
 			return (node.getAttribute("_uid") || node.setAttribute("_uid", ++_zipIdx) || _zipIdx);
@@ -1267,7 +1260,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 
 		// we have to fork here for IE and XML docs because we can't set
 		// expandos on their nodes (apparently). *sigh*
-		if(d.isIE && caseSensitive){
+		if(dojo.isIE && caseSensitive){
 			var szidx = _zipIdx+"";
 			arr[0].setAttribute(_zipIdxName, szidx);
 			for(var x = 1, te; te = arr[x]; x++){
@@ -1276,7 +1269,7 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 				}
 				te.setAttribute(_zipIdxName, szidx);
 			}
-		}else if(d.isIE && arr.commentStrip){
+		}else if(dojo.isIE && arr.commentStrip){
 			try{
 				for(var x = 1, te; te = arr[x]; x++){
 					if(_isElement(te)){
@@ -1450,9 +1443,9 @@ define(["../_base/kernel", "../has", "../_base/sniff", "../_base/array", "../_ba
 		//		Opera in XHTML mode doesn't detect case-sensitivity correctly
 		//		and it's not clear that there's any way to test for it
 		caseSensitive = (root.contentType && root.contentType=="application/xml") ||
-						(d.isOpera && (root.doctype || od.toString() == "[object XMLDocument]")) ||
+						(dojo.isOpera && (root.doctype || od.toString() == "[object XMLDocument]")) ||
 						(!!od) &&
-				(d.isIE ? od.xml : (root.xmlVersion || od.xmlVersion));
+				(dojo.isIE ? od.xml : (root.xmlVersion || od.xmlVersion));
 
 		// NOTE:
 		//		adding "true" as the 2nd argument to getQueryFunc is useful for

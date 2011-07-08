@@ -37,9 +37,9 @@
 	</script>
 	<script src="dojo/dojo.js"></script>
 	<script>
-		require(['dojo', 'dojo/on', 'eventd/mouse'], function(dojo, on, mouse){
+		require(['eventd/mouse', 'dojo/_base/window', 'dojo/on', 'dojo/dom/dom', 'dojo/dom/class'], function(mouse, win, on, dom, cls){
 			var logIt = (function(){
-				var output = dojo.byId("output");
+				var output = dom.byId("output");
 
 				return function(){
 					var str = "";
@@ -57,7 +57,7 @@
 			})();
 
 			function onMouseEvents(id){
-				var node = dojo.byId(id);
+				var node = dom.byId(id);
 				on(node, "mousedown", function(evt){
 					logIt(id, "mousedown", evt);
 				});
@@ -73,7 +73,7 @@
 			}
 
 			function onMoveEvents(id){
-				id = dojo.byId(id);
+				id = dom.byId(id);
 				on(id, "mouseenter", function(evt){
 					logIt(evt.target, "mouseenter", evt);
 				});
@@ -88,17 +88,17 @@
 			onMouseEvents("chk1");
 			onMouseEvents("chk2");
 
-			on(dojo.body(), "mouseover", function(evt){
-				dojo.addClass(evt.target, "over");
+			on(win.body(), "mouseover", function(evt){
+				cls.add(evt.target, "over");
 			});
-			on(dojo.body(), "mouseout", function(evt){
-				dojo.removeClass(evt.target, "over");
+			on(win.body(), "mouseout", function(evt){
+				cls.remove(evt.target, "over");
 			});
 
 			mouse.click("chk1").then.delay(function(){
 				mouse.click("chk2").then.delay(function(){
 					mouse.click("chk1").then.delay(function(){
-						onMoveEvents(dojo.body());
+						onMoveEvents(win.body());
 						mouse.move(300, 300, 2000, true);
 					},1000);
 				},1000);

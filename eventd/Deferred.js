@@ -1,4 +1,4 @@
-define(['dojo/_base/lang', 'dojo/on'], function(dojo, on){
+define(['dojo/_base/lang', 'dojo/on'], function(lang, on){
     var freeze = Object.freeze || function(){};
 
     function Promise(){}
@@ -146,7 +146,7 @@ define(['dojo/_base/lang', 'dojo/on'], function(dojo, on){
         freeze(promise);
     }
 
-    Deferred.prototype = dojo.delegate(Promise.prototype, { constructor: Deferred });
+    Deferred.prototype = lang.delegate(Promise.prototype, { constructor: Deferred });
     Deferred.Promise = Promise;
 
 	function event(node, type, async){
@@ -159,7 +159,7 @@ define(['dojo/_base/lang', 'dojo/on'], function(dojo, on){
 			}),
 			h = on(node, type, function(evt){
 				// make sure to disconnect this handler
-				h.cancel();
+				h.remove();
 
 				if(async){
 					timeout = setTimeout(function(){

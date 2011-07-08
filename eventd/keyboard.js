@@ -1,4 +1,14 @@
-define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_base/sniff', 'dojo/_base/connect', 'domReady!'], function(declare, on, eventd, dojo){
+define([
+	'./main',
+	'dojo/_base/kernel', // to get the dojo object
+	'dojo/_base/declare',
+	'dojo/on',
+	'dojo/_base/array',
+	'dojo/_base/sniff',
+	'dojo/_base/window',
+	'dojo/_base/connect', // for dojo.keys
+	'dojo/domReady!'
+], function(eventd, dojo, declare, on, array, has, win){
 	var KEY_CODE			= 1, // keyCode set to key code
 		KEY_CODE_CHAR_CODE	= 2, // keyCode set to character code
 		CHAR_CODE			= 4, // charCode set to character code
@@ -29,7 +39,7 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 		var defaults = KeyboardDefaults.prototype,
 			overrides;
 
-		if(dojo.isWebKit){
+		if(has("webKit")){
 			overrides = {
 				characters: {
 					keydown:  defaults.characters.keydown  | CHAR_CODE_ZERO,
@@ -50,7 +60,7 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 					keyup:	  defaults.Enter.keyup    | CHAR_CODE_ZERO
 				}
 			};
-		}else if(dojo.isFF){
+		}else if(has("ff")){
 			overrides = {
 				characters: {
 					keydown:  defaults.characters.keydown  | CHAR_CODE_ZERO,
@@ -99,13 +109,13 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 				keyOptions;
 
 			if(typeof key != "undefined"){
-				if(typeof key == "number" && dojo.indexOf(specials, key) > -1){
+				if(typeof key == "number" && array.indexOf(specials, key) > -1){
 					// dojo.keys.*
 					this.keyCode = key;
 					if(key == dojo.keys.ENTER){
 						key = '\r';
 						keyOptions = defaults.Enter[type];
-					}else if(key == dojo.keys.BACKSPACE){
+					}else if(key === dojo.keys.BACKSPACE){
 						key = '\b';
 						keyOptions = defaults.Backspace[type];
 					}else{
@@ -144,9 +154,9 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 		optionsConstructor: KeyboardOptions
 	});
 
-	if(dojo.doc.createEvent){
+	if(win.doc.createEvent){
 		try{
-			dojo.doc.createEvent("KeyEvents");
+			win.doc.createEvent("KeyEvents");
 			KeyboardEvent.extend({
 				create: function(){
 					var event, options = this.options;
@@ -165,7 +175,7 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 			});
 		}catch(e){
 			try{
-				dojo.doc.createEvent("Events");
+				win.doc.createEvent("Events");
 				KeyboardEvent.extend({
 					create: function(){
 						var event, options = this.options;
@@ -186,7 +196,7 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 	}
 
 	var events = {};
-	dojo.forEach(["KeyUp", "KeyDown", "KeyPress"], function(name){
+	array.forEach(["KeyUp", "KeyDown", "KeyPress"], function(name){
 		events[name] = declare(KeyboardEvent, {
 			type: name.toLowerCase()
 		});
@@ -205,10 +215,10 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 	var dispatch = eventd.dispatch;
 
 	(function(){
-		var div = dojo.doc.createElement("div");
+		var div = win.doc.createElement("div");
 		div.innerHTML = "<input type='input'/><input type='input'/>";
 
-		dojo.doc.documentElement.appendChild(div);
+		win.doc.documentElement.appendChild(div);
 
 		var text1 = div.firstChild,
 			text2 = text1.nextSibling;
@@ -232,14 +242,14 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 		text1.value = "";
 		var h;
 		try{
-			var e = dojo.doc.createEvent("TextEvent");
+			var e = win.doc.createEvent("TextEvent");
 			tests.hasTextEvents = typeof e.initTextEvent != "undefined";
 			e.initTextEvent("textInput", true, true, null, "asdf");
 			h = on(text1, "input", function(){
 				tests.textEventFiresInput = true;
 			});
 			text1.dispatchEvent(e);
-			h.cancel();
+			h.remove();
 		}catch(err){}
 		tests.textEventSetsValue = text1.value == "asdf";
 
@@ -251,9 +261,9 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 
 		dispatch(events.KeyPress, text1, { key: 'f' });
 		dispatch(events.KeyPress, text1, { key: '\r' });
-		h.cancel();
+		h.remove();
 
-		dojo.doc.documentElement.removeChild(div);
+		win.doc.documentElement.removeChild(div);
 	})();
 
 	if(tests.hasTextEvents){
@@ -303,7 +313,7 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 		if(typeof document.getSelection != "undefined"){
 			events.KeyDown.extend({
 				postDispatch: function(deferred){
-					if(this.options.key == dojo.keys.BACKSPACE || this.options.key == '\b'){
+					if(this.options.key === dojo.keys.BACKSPACE || this.options.key == '\b'){
 						var node = this.node;
 						deferred.then(function(){
 							node.selectionStart = node.selectionEnd - 1;
@@ -315,7 +325,7 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 		}else{
 			events.KeyDown.extend({
 				postDispatch: function(deferred){
-					if(this.options.key == dojo.keys.BACKSPACE || this.options.key == '\b'){
+					if(this.options.key === dojo.keys.BACKSPACE || this.options.key == '\b'){
 						var node = this.node;
 						deferred.then(function(){
 							var sel = document.selection.createRange();
@@ -395,18 +405,24 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 	var upperRE = /^[A-Z~!@#$%^&*()_+{}":?><]$/,
 		Dispatcher = eventd.Dispatcher;
 
+	function wrapEvent(func){
+		return function(node, options){
+			node = eventd.getNode(node);
+
+			return func(node, options);
+		};
+	}
+
 	return {
-		keydown: Dispatcher(events.KeyDown),
-		keypress: Dispatcher(events.KeyPress),
-		keyup: Dispatcher(events.KeyUp),
-		keystroke: function(node, character){
-			node = dojo.byId(node);
+		keydown: wrapEvent(Dispatcher(events.KeyDown)),
+		keypress: wrapEvent(Dispatcher(events.KeyPress)),
+		keyup: wrapEvent(Dispatcher(events.KeyUp)),
+		keystroke: wrapEvent(function(node, character){
 			var sequence = getSequence(node, character);
 
 			return generator(sequence, node);
-		},
-		keystrokes: function(node, characters, delayBetween){
-			node = dojo.byId(node);
+		}),
+		keystrokes: wrapEvent(function(node, characters, delayBetween){
 			delayBetween = delayBetween || 50;
 			var sequence = [],
 				upper = false;
@@ -432,7 +448,7 @@ define(['dojo/_base/declare', 'dojo/on', './main', 'dojo/_base/array', 'dojo/_ba
 			}
 
 			return generator(sequence, node);
-		},
+		}),
 		events: events,
 		Defaults: KeyboardDefaults,
 		Options: KeyboardOptions,
