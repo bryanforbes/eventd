@@ -271,18 +271,37 @@ define([
 			data: ""
 		});
 
+		var initTextEvent = function(event, object, options){
+			event.initTextEvent(object.type, options.bubbles, options.cancelable, options.view, options.data);
+		};
+		if(has("ie")){
+			initTextEvent = function(event, object, options){
+				event.initTextEvent(object.type, options.bubbles, options.cancelable, options.view, options.data, event.DOM_INPUT_METHOD_KEYBOARD, "en-US");
+			};
+		}
 		var TextInput = declare(eventd.Event, {
 			type: "textInput",
 			optionsConstructor: TextInputOptions,
 			create: function(){
 				var event = this.node.ownerDocument.createEvent("TextEvent"),
 					options = this.options;
-				event.initTextEvent(this.type, options.bubbles, options.cancelable, options.view, options.data);
+				initTextEvent(event, this, options);
 
 				return event;
 			}
 		});
 		events.TextInput = TextInput;
+		if(!tests.textEventSetsValue){
+			TextInput.extend({
+				postDispatch: function(deferred){
+					var node = this.node,
+						options = this.options;
+					deferred.then(function(){
+						node.value = (node.value||"") + options.data;
+					});
+				}
+			});
+		}
 		if(!tests.textEventFiresInput){
 			var Input = declare(eventd.Event, {
 				type: "input",

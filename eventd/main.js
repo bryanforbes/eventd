@@ -130,7 +130,7 @@ define([
 		postDispatch: function(){}
 	});
 
-	if(win.doc.createEventObject){
+	if(!win.doc.createEvent){
 		Event.extend({
 			create: function(){
 				var event = this.node.ownerDocument.createEventObject();
