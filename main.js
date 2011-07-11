@@ -2,7 +2,7 @@ define([
 	'./Deferred',
 	'dojo/_base/declare',
 	'dojo/on',
-	'dojo/dom/dom',
+	'dojo/dom',
 	'dojo/_base/window',
 	'dojo/_base/lang',
 	'dojo/_base/sniff'

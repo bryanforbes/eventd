@@ -22,7 +22,7 @@
 	<script src="dojo/dojo/dojo.js"></script>
 	<script>
 		var key, on;
-		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom/dom', 'dojo/_base/kernel'], function(mouse, keyboard, dom, dojo){
+		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom', 'dojo/_base/kernel'], function(mouse, keyboard, dom, dojo){
 			key = keyboard;
 			dom.byId("txt").value = "";
 			setTimeout(function(){
@@ -37,7 +37,7 @@
 		});
 
 		var handle;
-		require(['dojo', 'dojo/on', 'dojo/_base/array', 'dojo/dom/dom'], function(dojo, on, array, dom){
+		require(['dojo', 'dojo/on', 'dojo/_base/array', 'dojo/dom'], function(dojo, on, array, dom){
 			window.on = on;
 			array.forEach(["keydown", "keypress", "keyup", "change", "textInput", "input"], function(type){
 				if(type == "keydown"){
