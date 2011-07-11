@@ -37,7 +37,13 @@
 	</script>
 	<script src="dojo/dojo.js"></script>
 	<script>
-		require(['eventd/mouse', 'dojo/_base/window', 'dojo/on', 'dojo/dom/dom', 'dojo/dom/class'], function(mouse, win, on, dom, cls){
+		require([
+			'eventd/mouse',
+			'dojo/_base/window',
+			'dojo/on',
+			'dojo/dom',
+			'dojo/dom-class'
+		], function(mouse, win, on, dom, cls){
 			var logIt = (function(){
 				var output = dom.byId("output");
 

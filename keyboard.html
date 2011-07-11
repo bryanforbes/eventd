@@ -21,7 +21,12 @@
 	</script>
 	<script src="dojo/dojo.js"></script>
 	<script>
-		require(['eventd/mouse', 'eventd/keyboard', 'dojo/on', 'dojo/dom/dom'], function(mouse, keyboard, on, dom){
+		require([
+			'eventd/mouse',
+			'eventd/keyboard',
+			'dojo/on',
+			'dojo/dom'
+		], function(mouse, keyboard, on, dom){
 			var logIt = (function(){
 				var output = dom.byId("output");
 
