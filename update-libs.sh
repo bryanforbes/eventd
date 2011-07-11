@@ -7,9 +7,11 @@ echo $SCRIPTDIR
 DOJO=~/Projects/dojo/trunk/dojo
 EVENTD=~/Projects/eventd
 
+rm -rf "$SCRIPTDIR/dojo"
 cd "$DOJO"
 git archive --prefix=dojo/ master | tar -x -C "$SCRIPTDIR"
 
+rm -rf "$SCRIPTDIR/eventd"
 cd "$EVENTD"
 git archive --prefix=eventd/ master | tar -x -C "$SCRIPTDIR"
 
