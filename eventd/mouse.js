@@ -7,8 +7,8 @@ define([
 	'dojo/_base/window',
 	'dojo/window',
 	'dojo/_base/array',
-	'dojo/dom/geometry',
-	'dojo/dom/construct',
+	'dojo/dom-geometry',
+	'dojo/dom-construct',
 	'dojo/_base/fx',
 	'dojo/domReady!'
 ], function(eventd, Deferred, declare, has, on, win, dwin, array, geom, constr, fx){

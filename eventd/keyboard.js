@@ -87,19 +87,21 @@ define([
 		return new KeyboardDefaults(overrides);
 	})();
 
-	var specials = (function(){
-		var specials = [];
-		for(var key in dojo.keys){
-			specials.push(dojo.keys[key]);
-		}
-		return specials;
-	})();
+	var keys = dojo.keys,
+		specials = (function(){
+			var specials = [];
+			for(var key in keys){
+				specials.push(keys[key]);
+			}
+			return specials;
+		})();
+
 
 	var KeyboardOptions = declare(eventd.Options, {
-		ctrlKey: 0,
-		altKey: 0,
-		shiftKey: 0,
-		metaKey: 0,
+		ctrlKey: false,
+		altKey: false,
+		shiftKey: false,
+		metaKey: false,
 		keyCode: undefined,
 		charCode: undefined,
 
@@ -112,12 +114,17 @@ define([
 				if(typeof key == "number" && array.indexOf(specials, key) > -1){
 					// dojo.keys.*
 					this.keyCode = key;
-					if(key == dojo.keys.ENTER){
+					if(key == keys.ENTER){
 						key = '\r';
 						keyOptions = defaults.Enter[type];
-					}else if(key === dojo.keys.BACKSPACE){
+					}else if(key === keys.BACKSPACE){
 						key = '\b';
 						keyOptions = defaults.Backspace[type];
+					}else if(key >= keys.LEFT_ARROW && key <= keys.DOWN_ARROW){
+						keyOptions = defaults.Special[type];
+					}else if(key === keys.SPACE){
+						key = ' ';
+						keyOptions = defaults.characters[type];
 					}else{
 						keyOptions = defaults.Special[type];
 					}
@@ -182,8 +189,7 @@ define([
 						try{
 							event = this.node.ownerDocument.createEvent("Events");
 							event.initEvent(this.type, options.bubbles, options.cancelable, options.view);
-							event.keyCode = options.keyCode;
-							event.charCode = options.charCode;
+							this.options.copyToEvent(event);
 						}catch(e){
 							event = this.inherited(arguments);
 						}
@@ -224,14 +230,14 @@ define([
 			text2 = text1.nextSibling;
 
 		text1.focus();
-		dispatch(events.KeyPress, text1, { key: dojo.keys.ENTER });
+		dispatch(events.KeyPress, text1, { key: keys.ENTER });
 
 		dispatch(events.KeyPress, text1, { key: "s" });
 		tests.pressChars = text1.value == "s";
 
 		text1.value = "s";
 
-		dispatch(events.KeyPress, text1, { key: dojo.keys.BACKSPACE });
+		dispatch(events.KeyPress, text1, { key: keys.BACKSPACE });
 		tests.pressBackspace = text1.value === "";
 
 		text2.focus();
@@ -328,85 +334,189 @@ define([
 		});
 	}
 
+	var handleBackspace;
 	if(!tests.pressBackspace){
 		if(typeof document.getSelection != "undefined"){
-			events.KeyDown.extend({
-				postDispatch: function(deferred){
-					if(this.options.key === dojo.keys.BACKSPACE || this.options.key == '\b'){
-						var node = this.node;
-						deferred.then(function(){
-							node.selectionStart = node.selectionEnd - 1;
-							document.execCommand("delete");
-						});
-					}
-				}
-			});
+			handleBackspace = function(node){
+				node.selectionStart = node.selectionEnd - 1;
+				document.execCommand("delete");
+			};
 		}else{
-			events.KeyDown.extend({
-				postDispatch: function(deferred){
-					if(this.options.key === dojo.keys.BACKSPACE || this.options.key == '\b'){
-						var node = this.node;
-						deferred.then(function(){
-							var sel = document.selection.createRange();
-							sel.moveStart("character", "-1");
-							sel.select();
-							document.execCommand("delete");
-						});
-					}
-				}
-			});
+			handleBackspace = function(node){
+				var sel = document.selection.createRange();
+				sel.moveStart("character", "-1");
+				sel.select();
+				document.execCommand("delete");
+			};
 		}
 	}
 
-	var charRE = /^[A-Za-z0-9 !@#$%^&*()_+-={}[\]:;"'`~,.\/<>?]$/;
-	function getSequence(node, character){
+	var handleArrows = typeof document.getSelection != "undefined" ?
+		function(key, node){
+			switch(key){
+				case keys.LEFT_ARROW:
+					node.selectionStart = node.selectionEnd = node.selectionEnd - 1;
+					break;
+				case keys.RIGHT_ARROW:
+					node.selectionStart = node.selectionEnd = node.selectionEnd + 1;
+					break;
+				default:
+					break;
+			}
+		} :
+		function(key, node){
+			var sel = document.selection.createRange(),
+				count;
+			switch(key){
+				case keys.LEFT_ARROW:
+					count = "-1";
+					break;
+				case keys.RIGHT_ARROW:
+					count = "1";
+					break;
+				default:
+					break;
+			}
+			if(count){
+				sel.moveStart("character", count);
+				sel.collapse(true);
+			}
+		};
+	events.KeyDown.extend({
+		postDispatch: function(deferred){
+			var key = this.options.key,
+				node = this.node;
+			if(handleBackspace && (key === keys.BACKSPACE || key == '\b')){
+				deferred.then(function(){
+					handleBackspace(node);
+				});
+			}else if(key >= keys.LEFT_ARROW && key <= keys.DOWN_ARROW){
+				var name = node.nodeName.toUpperCase();
+				if(name == "INPUT" || name == "TEXTAREA"){
+					deferred.then(function(){
+						handleArrows(key, node);
+					});
+				}
+			}
+		}
+	});
+
+	var charRE = /^[A-Za-z0-9!@#$%^&*()_+-={}[\]:;"'`~,.\/<>?]$/,
+		upperRE = /^[A-Z~!@#$%^&*()_+{}":?><]$/;
+	function KeySequence(node, characters, delayBetween){
 		var sequence = [],
 			name = node.nodeName.toUpperCase();
 
-		if(charRE.test(character)){
-			sequence.push([events.KeyDown, { key: character }]);
-			sequence.push([events.KeyPress, { key: character }]);
-			if(tests.hasTextEvents){
-				sequence.push([TextInput, { data: character }]);
-				if(!tests.textEventFiresInput){
-					sequence.push([Input]);
-				}
+		function add(){
+			for(var i=0, tuple; tuple=arguments[i]; i++){
+				sequence.push(tuple);
 			}
-			sequence.push([events.KeyUp, { key: character }]);
-		}else if(character == "\r" || character == dojo.keys.ENTER){
-			sequence.push([events.KeyDown, { key: dojo.keys.ENTER }]);
-			sequence.push([events.KeyPress, { key: dojo.keys.ENTER }]);
-			if(name == "TEXTAREA" && tests.hasTextEvents){
-				sequence.push([TextInput, { data: "\r\n" }]);
-				if(!tests.textEventFiresInput){
-					sequence.push([Input]);
-				}
-			}
-			if(name == "INPUT" && !tests.pressEnterChange){
-				sequence.push([eventd.events.Change]);
-			}
-			sequence.push([events.KeyUp, { key: dojo.keys.ENTER }]);
-		}else if(character == "\b"){
-			sequence.push([events.KeyDown, { key: dojo.keys.BACKSPACE }]);
-			if(typeof defaults.Backspace.keypress != "undefined"){
-				sequence.push([events.KeyPress, { key: dojo.keys.BACKSPACE }]);
-			}
-			sequence.push([events.KeyUp, { key: dojo.keys.BACKSPACE }]);
-		}else if(character == "\t"){
-			sequence.push([events.KeyDown, { key: "Tab" }]);
 		}
 
-		return sequence;
-	}
+		function fromString(string){
+			var lastUpper = 0, upper = 0;
+			for(var i=0, character; character=string.charAt(i); i++){
+				upper = upperRE.test(character);
+				if(!lastUpper && upper){
+					add([events.KeyDown, { key: keys.SHIFT }]);
+					lastUpper = 1;
+				}else if(lastUpper && !upper){
+					add([events.KeyUp, { key: keys.SHIFT }]);
+					lastUpper = 0;
+				}
 
-	function generator(sequence, node){
-		sequence = sequence.slice(0);
+				fromCharacter(character, upper);
+			}
+
+			if(upper){
+				add([events.KeyUp, { key: keys.SHIFT }]);
+			}
+		}
+
+		function fromArray(arr){
+			for(var i=0, l=arr.length, character; i<l; i++){
+				character = arr[i];
+				if(typeof character == "string"){
+					fromString(character);
+				}else if(typeof character == "number"){
+					fromCharacter(character);
+				}
+			}
+		}
+
+		function fromCharacter(character, upper){
+			// insert a delay between keystrokes
+			if(sequence.length > 1 && delayBetween){
+				sequence[sequence.length-1][2] = delayBetween;
+			}
+
+			var options;
+			if(charRE.test(character)){
+				options = { key: character, shiftKey: !!upper };
+				add([events.KeyDown, options], [events.KeyPress, options]);
+				if(tests.hasTextEvents){
+					add([TextInput, { data: character }]);
+					if(!tests.textEventFiresInput){
+						add([Input]);
+					}
+				}
+				add([events.KeyUp, options]);
+			}else if(character == "\r" || character == keys.ENTER){
+				options = { key: keys.ENTER };
+				add([events.KeyDown, options], [events.KeyPress, options]);
+				if(name == "TEXTAREA" && tests.hasTextEvents){
+					add([TextInput, { data: "\r\n" }]);
+					if(!tests.textEventFiresInput){
+						add([Input]);
+					}
+				}
+				if(name == "INPUT" && !tests.pressEnterChange){
+					add([eventd.events.Change]);
+				}
+				add([events.KeyUp, options]);
+			}else if(character == " " || character == keys.SPACE){
+				options = { key: keys.SPACE };
+				add([events.KeyDown, options], [events.KeyPress, options]);
+				if((name == "TEXTAREA" || name == "INPUT") && tests.hasTextEvents){
+					add([TextInput, { data: " " }]);
+					if(!tests.textEventFiresInput){
+						add([Input]);
+					}
+				}
+				add([events.KeyUp, options]);
+			}else if(character == "\b"){
+				options = { key: keys.BACKSPACE };
+				add([events.KeyDown, options]);
+				if(typeof defaults.Backspace.keypress != "undefined"){
+					add([events.KeyPress, options]);
+				}
+				add([events.KeyUp, options]);
+			}else if(character == "\t"){
+				add([events.KeyDown, { key: "Tab" }]);
+			}else if(typeof character == "number"){
+				if(character >= keys.LEFT_ARROW && character <= keys.DOWN_ARROW){
+					add([events.KeyDown, { key: character }], [events.KeyUp, { key: character }]);
+				}
+			}
+		}
+
+		if(typeof characters == "string"){
+			if(characters.length == 1){
+				fromCharacter(characters, upperRE.test(characters));
+			}else{
+				fromString(characters);
+			}
+		}else if(typeof characters == "number"){
+			fromCharacter(characters);
+		}else{
+			fromArray(characters);
+		}
+
 		function next(){
-			var nextItem = sequence.shift(),
-				options, res;
+			var nextItem = sequence.shift();
 			if(nextItem){
 				if(typeof nextItem[1] != "undefined"){
-					options = nextItem[1];
+					var options = nextItem[1];
 				}
 
 				var d = (new nextItem[0](node, options)).dispatch();
@@ -421,8 +531,8 @@ define([
 		return next();
 	}
 
-	var upperRE = /^[A-Z~!@#$%^&*()_+{}":?><]$/,
-		Dispatcher = eventd.Dispatcher;
+
+	var Dispatcher = eventd.Dispatcher;
 
 	function wrapEvent(func){
 		return function(node, options){
@@ -437,36 +547,11 @@ define([
 		keypress: wrapEvent(Dispatcher(events.KeyPress)),
 		keyup: wrapEvent(Dispatcher(events.KeyUp)),
 		keystroke: wrapEvent(function(node, character){
-			var sequence = getSequence(node, character);
-
-			return generator(sequence, node);
+			return KeySequence(node, character);
 		}),
 		keystrokes: wrapEvent(function(node, characters, delayBetween){
 			delayBetween = delayBetween || 50;
-			var sequence = [],
-				upper = false;
-			for(var i=0, character; character=characters.charAt(i); i++){
-				if(!upper && upperRE.test(character)){
-					sequence.push([events.KeyDown, { key: dojo.keys.SHIFT }]);
-					upper = true;
-				}else if(upper && !upperRE.test(character)){
-					sequence.push([events.KeyUp, { key: dojo.keys.SHIFT }]);
-					upper = false;
-				}
-
-				// insert a delay between keystrokes
-				if(sequence.length > 1 && delayBetween){
-					sequence[sequence.length-1][2] = delayBetween;
-				}
-
-				sequence = sequence.concat(getSequence(node, character));
-			}
-
-			if(upper){
-				sequence.push([events.KeyUp, { key: dojo.keys.SHIFT }]);
-			}
-
-			return generator(sequence, node);
+			return KeySequence(node, characters, delayBetween);
 		}),
 		events: events,
 		Defaults: KeyboardDefaults,
