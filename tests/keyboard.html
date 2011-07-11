@@ -21,13 +21,13 @@
 	</script>
 	<script src="dojo/dojo/dojo.js"></script>
 	<script>
-		var key;
-		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom/dom'], function(mouse, keyboard, dom){
+		var key, on;
+		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom/dom', 'dojo/_base/kernel'], function(mouse, keyboard, dom, dojo){
 			key = keyboard;
 			dom.byId("txt").value = "";
 			setTimeout(function(){
 				mouse.click("txt").then.delay(function(){
-					keyboard.keystrokes("txt", "Bryan Forbes\r\b\r").then.delay(function(){
+					keyboard.keystrokes("txt", ["Bryan Forbes\r\b\r", dojo.keys.LEFT_ARROW, "a"]).then.delay(function(){
 						mouse.click("txta").then.delay(function(){
 							keyboard.keystrokes("txta", "Bryan Forbes\rasdf\b\b\rasdf");
 						}, 500);
@@ -36,9 +36,20 @@
 			},500);
 		});
 
+		var handle;
 		require(['dojo', 'dojo/on', 'dojo/_base/array', 'dojo/dom/dom'], function(dojo, on, array, dom){
+			window.on = on;
 			array.forEach(["keydown", "keypress", "keyup", "change", "textInput", "input"], function(type){
-				on(dom.byId("txt"), type, function(evt){
+				if(type == "keydown"){
+					handle = on(dom.byId("txt"), type, function(evt){
+						console.log(evt.type, evt.keyCode, evt.charCode);
+					});
+				}else{
+					on(dom.byId("txt"), type, function(evt){
+						console.log(evt.type, evt.keyCode, evt.charCode);
+					});
+				}
+				on(dom.byId("div"), type, function(evt){
 					console.log(evt.type, evt.keyCode, evt.charCode);
 				});
 			});
@@ -48,5 +59,6 @@
 <body>
 	<input id="txt" />
 	<textarea id="txta"></textarea>
+	<div id="div" tabIndex="0" style="width: 400px; height: 400px;"></div>
 </body>
 </html>
