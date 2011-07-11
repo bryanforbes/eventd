@@ -214,6 +214,7 @@ define([
 		pressEnterChange: false,
 		pressBackspace: false,
 		hasTextEvents: false,
+		hasIETextEvents: false,
 		textEventSetsValue: false,
 		textEventFiresInput: false
 	};
@@ -250,7 +251,13 @@ define([
 		try{
 			var e = win.doc.createEvent("TextEvent");
 			tests.hasTextEvents = typeof e.initTextEvent != "undefined";
-			e.initTextEvent("textInput", true, true, null, "asdf");
+			try{
+				e.initTextEvent("textInput", true, true, null, "asdf");
+			}catch(teErr){
+				// IE requires passing 2 extra arguments
+				e.initTextEvent("textInput", true, true, null, "asdf", e.DOM_INPUT_METHOD_KEYBOARD, "en-US");
+				tests.hasIETextEvents = true;
+			}
 			h = on(text1, "input", function(){
 				tests.textEventFiresInput = true;
 			});
@@ -277,15 +284,16 @@ define([
 			data: ""
 		});
 
-		var initTextEvent = function(event, object, options){
-			event.initTextEvent(object.type, options.bubbles, options.cancelable, options.view, options.data);
-		};
-		if(has("ie")){
-			initTextEvent = function(event, object, options){
-				event.initTextEvent(object.type, options.bubbles, options.cancelable, options.view, options.data, event.DOM_INPUT_METHOD_KEYBOARD, "en-US");
+		var initTextEvent = !tests.hasIETextEvents ?
+			function(event, object, options){
+				event.initTextEvent(object.type, options.bubbles, options.cancelable, options.view, options.data);
+			} :
+			function(event, object, options){
+				event.initTextEvent(object.type, options.bubbles, options.cancelable, options.view, options.data,
+									event.DOM_INPUT_METHOD_KEYBOARD, "en-US");
 			};
-		}
-		var TextInput = declare(eventd.Event, {
+
+		var TextInput = events.TextInput = declare(eventd.Event, {
 			type: "textInput",
 			optionsConstructor: TextInputOptions,
 			create: function(){
@@ -296,7 +304,6 @@ define([
 				return event;
 			}
 		});
-		events.TextInput = TextInput;
 		if(!tests.textEventSetsValue){
 			TextInput.extend({
 				postDispatch: function(deferred){
@@ -309,7 +316,7 @@ define([
 			});
 		}
 		if(!tests.textEventFiresInput){
-			var Input = declare(eventd.Event, {
+			var Input = events.Input = declare(eventd.Event, {
 				type: "input",
 				create: function(){
 					var event = this.node.ownerDocument.createEvent("Event"),
@@ -320,7 +327,6 @@ define([
 					return event;
 				}
 			});
-			events.Input = Input;
 		}
 	}else if(!tests.pressChars){
 		events.KeyPress.extend({
