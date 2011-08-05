@@ -16,12 +16,17 @@
 			async: true,
 			packages: [{
 				name: 'eventd',
-				location: '../../..',
+				location: '../..',
+				lib: '.'
+			},{
+				name: 'compose',
+				location: '../compose',
+				main: 'compose',
 				lib: '.'
 			}]
 		};
 	</script>
-	<script src="dojo/dojo/dojo.js"></script>
+	<script src="dojo/dojo.js"></script>
 </head>
 <body>
 	<input id="cbx" type="checkbox" />
@@ -54,11 +59,11 @@
 			dom.byId("cbx").checked = false;
 
 			setTimeout(function(){
-				mouse.click(dom.byId("cbx")).then.delay(function(){
+				mouse.click(dom.byId("cbx")).delay(1000).then(function(){
 					mouse.click(dom.byId("cbx")).then(function(){
 						mouse.move(300, 300, 2000, true);
 					});
-				},1000);
+				});
 			},500);
 		});
 	</script>

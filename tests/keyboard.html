@@ -14,25 +14,30 @@
 			async: true,
 			packages: [{
 				name: 'eventd',
-				location: '../../..',
+				location: '../..',
+				lib: '.'
+			},{
+				name: 'compose',
+				location: '../compose',
+				main: 'compose',
 				lib: '.'
 			}]
 		};
 	</script>
-	<script src="dojo/dojo/dojo.js"></script>
+	<script src="dojo/dojo.js"></script>
 	<script>
 		var key, on;
 		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom', 'dojo/_base/kernel'], function(mouse, keyboard, dom, dojo){
 			key = keyboard;
 			dom.byId("txt").value = "";
 			setTimeout(function(){
-				mouse.click("txt").then.delay(function(){
-					keyboard.keystrokes("txt", ["Bryan Forbes\r\b\r", dojo.keys.LEFT_ARROW, "a"]).then.delay(function(){
-						mouse.click("txta").then.delay(function(){
+				mouse.click("txt").delay(500).then(function(){
+					keyboard.keystrokes("txt", ["Bryan Forbes\r\b\r", dojo.keys.LEFT_ARROW, "a"]).delay(500).then(function(){
+						mouse.click("txta").delay(500).then(function(){
 							keyboard.keystrokes("txta", "Bryan Forbes\rasdf\b\b\rasdf");
-						}, 500);
-					}, 500);
-				}, 500);
+						});
+					});
+				});
 			},500);
 		});
 
@@ -57,8 +62,8 @@
 	</script>
 </head>
 <body>
-	<input id="txt" />
-	<textarea id="txta"></textarea>
-	<div id="div" tabIndex="0" style="width: 400px; height: 400px;"></div>
+	<input tabindex="1" id="txt" />
+	<textarea tabindex="2" id="txta"></textarea>
+	<div id="div" tabindex="1" style="width: 400px; height: 400px;"></div>
 </body>
 </html>

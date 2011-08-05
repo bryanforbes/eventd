@@ -8,22 +8,27 @@
 			async: true,
 			packages: [{
 				name: 'eventd',
-				location: '../../..',
+				location: '../..',
+				lib: '.'
+			},{
+				name: 'compose',
+				location: '../compose',
+				main: 'compose',
 				lib: '.'
 			}]
 		};
 	</script>
-	<script src="dojo/dojo/dojo.js"></script>
+	<script src="dojo/dojo.js"></script>
 	<script>
 		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom'], function(mouse, keyboard, dom){
 			dom.byId("cbx").checked = false;
 			dom.byId("txt").value = "";
 			setTimeout(function(){
-				mouse.click("cbx").then.delay(function(){
-					mouse.click("txt").then.delay(function(){
+				mouse.click("cbx").delay(500).then(function(){
+					mouse.click("txt").delay(500).then(function(){
 						keyboard.keystrokes("txt", "Bryan Forbes");
-					}, 500);
-				}, 500);
+					});
+				});
 			},500);
 		});
 
