@@ -1,4 +1,3 @@
-
 define(["./aspect", "./_base/kernel", "./has"], function(aspect, dojo, has){
 	// summary:
 	//		The export of this module is a function that provides core event listening functionality. With this function
@@ -49,15 +48,17 @@ define(["./aspect", "./_base/kernel", "./has"], function(aspect, dojo, has){
 
  	"use strict";
 	var after = aspect.after;
-	if(typeof window != "undefined"){ // check to make sure we are in a browser, this module should work anywhere
+	if(has("dom")){ // check to make sure we are in a browser, this module should work anywhere
 		var major = window.ScriptEngineMajorVersion;
 		has.add("jscript", major && (major() + ScriptEngineMinorVersion() / 10));
-		has.add("event-orientationchange", has("touch") && !dojo.isAndroid); // TODO: how do we detect this?
+		has.add("event-orientationchange", has("touch") && !has("android")); // TODO: how do we detect this?
 	}
 	var on = function(target, type, listener, dontFix){
 		if(!listener){
-			// two args, do pub/sub
-			return on(on, target, type);
+			// two args, do pub/sub or window listening
+			// if there is a window event for the given target, we will target the window
+			return on(has("dom") && ("on" + target) in window ? window : on, 
+				target, type);
 		}
 		if(target.on){ 
 			// delegate to the target's on() method, so it can handle it's own listening if it wants
@@ -154,13 +155,15 @@ define(["./aspect", "./_base/kernel", "./has"], function(aspect, dojo, has){
 		// normal path, the target is |this|
 		if(target.addEventListener){
 			// the target has addEventListener, which should be used if available (might or might not be a node, non-nodes can implement this method as well)
-			var signal = {
+			// check for capture conversions
+			var capture = type in captures;
+			target.addEventListener(capture ? captures[type] : type, listener, capture);
+			// create and return the signal
+			return {
 				remove: function(){
-					target.removeEventListener(type, listener, false);
+					target.removeEventListener(type, listener, capture);
 				}
 			};
-			target.addEventListener(type, listener, false);
-			return signal;
 		}
 		type = "on" + type;
 		if(fixAttach && target.attachEvent){
@@ -205,7 +208,8 @@ define(["./aspect", "./_base/kernel", "./has"], function(aspect, dojo, has){
 	function syntheticStopPropagation(){
 		this.bubbles = false;
 	}
-	var syntheticDispatch = on.emit = function(target, type, event){
+	var slice = [].slice,
+		syntheticDispatch = prototype.emit = on.emit = function(target, type, event){
 		// summary:
 		//		Fires an event on the target object.
 		//	target:
@@ -253,23 +257,44 @@ define(["./aspect", "./_base/kernel", "./has"], function(aspect, dojo, has){
 		//	|		bubbles: true,
 		//	|		direction: "left-to-right"
 		//	|	});
+		var args = slice.call(arguments, 2);
+		if(typeof target == "string"){
+			// two argument case
+			args.unshift(event = type);
+			type = target;
+			target = this;
+		}
 		var method = "on" + type;
 		if("parentNode" in target){
 			// node (or node-like), create event controller methods
-			event.preventDefault = syntheticPreventDefault;
-			event.stopPropagation = syntheticStopPropagation;
-			event.target = target;
-			event.type = type;
+			var newEvent = args[0] = {};
+			for(var i in event){
+				newEvent[i] = event[i];
+			}
+			newEvent.preventDefault = syntheticPreventDefault;
+			newEvent.stopPropagation = syntheticStopPropagation;
+			newEvent.target = target;
+			newEvent.type = type;
+			event = newEvent;
 		}
 		do{
 			// call any node which has a handler (note that ideally we would try/catch to simulate normal event propagation but that causes too much pain for debugging)
-			target[method] && target[method].call(target, event);
+			target[method] && target[method].apply(target, args);
 			// and then continue up the parent node chain if it is still bubbling (if started as bubbles and stopPropagation hasn't been called)
-		}while(event.bubbles && (target = target.parentNode));
-		return event.cancelable && event; // if it is still true (was cancelable and was cancelled), return the event to indicate default action should happen
+		}while(event && event.bubbles && (target = target.parentNode));
+		return event && event.cancelable && event; // if it is still true (was cancelable and was cancelled), return the event to indicate default action should happen
 	};
 
 	if(has("dom-addeventlistener")){
+		// normalize focusin and focusout
+		var captures = {
+			focusin: "focus",
+			focusout: "blur"
+		};
+		if(has("opera")){
+			captures.keydown = "keypress"; // this one needs to be transformed because Opera doesn't support repeating keys on keydown (and keypress works because it incorrectly fires on all keydown events)
+		}
+
 		// emiter that works with native event handling
 		on.emit = function(target, type, event){
 			if(target.dispatchEvent && document.createEvent){
@@ -284,17 +309,13 @@ define(["./aspect", "./_base/kernel", "./has"], function(aspect, dojo, has){
 				// and copy all our properties over
 				for(var i in event){
 					var value = event[i];
-					if(value !== nativeEvent[i]){
-						try{
-							nativeEvent[i] = event[i];
-						}catch(e){
-							// suppress failures, FF won't allow target properties to be set (which will be overriden by the emit anyway).
-						}
+					if(!(i in nativeEvent)){
+						nativeEvent[i] = event[i];
 					}
 				}
 				return target.dispatchEvent(nativeEvent) && nativeEvent;
 			}
-			return syntheticDispatch(target, type, event); // emit for a non-node
+			return syntheticDispatch.call(on, target, type, event); // emit for a non-node
 		};
 	}else{
 		// no addEventListener, basically old IE event normalization
@@ -314,8 +335,6 @@ define(["./aspect", "./_base/kernel", "./has"], function(aspect, dojo, has){
 			if(!evt.target){ // check to see if it has been fixed yet
 				evt.target = evt.srcElement;
 				evt.currentTarget = (sender || evt.srcElement);
-				evt.layerX = evt.offsetX;
-				evt.layerY = evt.offsetY;
 				if(evt.type == "mouseover"){
 					evt.relatedTarget = evt.fromElement;
 				}
@@ -414,8 +433,8 @@ define(["./aspect", "./_base/kernel", "./has"], function(aspect, dojo, has){
 		};
 	}
 	if(has("touch")){ 
-		var windowOrientation = window.orientation; 
 		var Event = function (){};
+		var windowOrientation = window.orientation; 
 		var fixTouchListener = function(listener){ 
 			return function(originalEvent){ 
 				//Event normalization(for ontouchxxx and resize): 
@@ -469,9 +488,5 @@ define(["./aspect", "./_base/kernel", "./has"], function(aspect, dojo, has){
 			}; 
 		}; 
 	}
-	on.publish = prototype.emit = function(type, event){
-		type = "on" + type;
-		this[type] && this[type](event);
-	};
 	return on;
 });

@@ -63,7 +63,7 @@ define(["./_base/kernel", "require", "./has", "./_base/array", "./_base/lang", "
 			bundleName = bundleName.replace(/\./g, "/");
 			return (/root/i.test(locale)) ?
 				(moduleName + "/nls/" + bundleName) :
-				(moduleName + "/nls/"	 + locale + "/" + bundleName);
+				(moduleName + "/nls/" + locale + "/" + bundleName);
 		},
 
 		doLoad = function(require, bundlePathAndName, bundlePath, bundleName, locale, load){
@@ -74,7 +74,7 @@ define(["./_base/kernel", "require", "./has", "./_base/array", "./_base/lang", "
 					availableLocales= getAvailableLocales(!root._v1x && root, locale, bundlePath, bundleName);
 				require(availableLocales, function(){
 					for (var i= 1; i<availableLocales.length; i++){
-						cache[availableLocales[i]]= current= dojo.mixin(dojo.clone(current), arguments[i]);
+						cache[availableLocales[i]]= current= lang.mixin(dojo.clone(current), arguments[i]);
 					}
 					// target may not have been resolve (e.g., maybe only "fr" exists when "fr-ca" was requested)
 					var target= bundlePathAndName + "/" + locale;
@@ -141,6 +141,7 @@ define(["./_base/kernel", "require", "./has", "./_base/array", "./_base/lang", "
 					if(cache[url]){
 						results.push(cache[url]);
 					}else{
+
 						try {
 							var bundle= require(mid);
 							if(bundle){
@@ -148,6 +149,7 @@ define(["./_base/kernel", "require", "./has", "./_base/array", "./_base/lang", "
 								return;
 							}
 						}catch(e){}
+
 						dojo.xhrGet({
 							url:url,
 							sync:true,
@@ -161,7 +163,7 @@ define(["./_base/kernel", "require", "./has", "./_base/array", "./_base/lang", "
 						});
 					}
 				});
-				callback.apply(callback, results);
+				callback.apply(null, results);
 			};
 
 		syncRequire.toAbsMid= function(mid){

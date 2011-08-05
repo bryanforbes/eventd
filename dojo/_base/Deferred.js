@@ -1,4 +1,4 @@
-define(["./kernel", "./lang"], function(dojo){
+define(["./kernel", "./lang"], function(dojo, lang){
 	// module:
 	//		dojo/_base/Deferred
 	// summary:
@@ -290,7 +290,7 @@ define(["./kernel", "./lang"], function(dojo){
 		};
 		freeze(promise);
 	};
-	dojo.extend(dojo.Deferred, {
+	lang.extend(dojo.Deferred, {
 		addCallback: function (/*Function*/callback){
 			return this.addCallbacks(dojo.hitch.apply(dojo, arguments));
 		},

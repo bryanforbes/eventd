@@ -1,4 +1,4 @@
-define(["./kernel", "./sniff", "require", "../on", "../io-query", "../dom-form", "./Deferred", "./json", "./lang"], function(dojo, has, require, on, ioq, domForm){
+define(["./kernel", "./sniff", "require", "../on", "../io-query", "../dom-form", "./Deferred", "./json", "./lang"], function(dojo, has, require, on, ioq, domForm, deferred, json, lang){
 	//	module:
 	//		dojo/_base.xhr
 	// summary:
@@ -23,7 +23,7 @@ define(["./kernel", "./sniff", "require", "../on", "../io-query", "../dom-form",
 		};
 	}else{
 		// PROGIDs are in order of decreasing likelihood; this will change in time.
-		for(var XMLHTTP_PROGIDS = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP', 'Msxml2.XMLHTTP.4.0'], progid, i = 0; i<3;){
+		for(var XMLHTTP_PROGIDS = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP', 'Msxml2.XMLHTTP.4.0'], progid, i = 0; i < 3;){
 			try{
 				progid = XMLHTTP_PROGIDS[i++];
 				if (new ActiveXObject(progid)) {
@@ -37,11 +37,7 @@ define(["./kernel", "./sniff", "require", "../on", "../io-query", "../dom-form",
 			}
 		}
 		dojo._xhrObj= function() {
-			try{
-				return new ActiveXObject(progid);
-			}catch(e){
-				throw new Error("XMLHTTP not available: "+e);
-			}
+			return new ActiveXObject(progid);
 		};
 	}
 
@@ -787,8 +783,26 @@ define(["./kernel", "./sniff", "require", "../on", "../io-query", "../dom-form",
 	}
 	*/
 
+	dojo._isDocumentOk = function(http){
+		var stat = http.status || 0;
+		stat =
+			(stat >= 200 && stat < 300) || // allow any 2XX response code
+			stat == 304 ||                 // or, get it out of the cache
+			stat == 1223 ||                // or, Internet Explorer mangled the status code
+			!stat;                         // or, we're Titanium/browser chrome/chrome extension requesting a local file
+		return stat; // Boolean
+	};
+
+	dojo._getText = function(url){
+		var result;
+		dojo.xhrGet({url:url, sync:true, load:function(text){
+			result = text;
+		}});
+		return result;
+	};
+
 	// Add aliases for static functions to dojo.xhr since dojo.xhr is what's returned from this module
-	dojo.mixin(dojo.xhr, {
+	lang.mixin(dojo.xhr, {
 		_xhrObj: dojo._xhrObj,
 		fieldToObject: dojo.fieldToObject,
 		formToObject: dojo.formToObject,
@@ -802,6 +816,7 @@ define(["./kernel", "./sniff", "require", "../on", "../io-query", "../dom-form",
 		_ioNotifyStart: dojo._ioNotifyStart,
 		_ioWatch: dojo._ioWatch,
 		_ioAddQueryToUrl: dojo._ioAddQueryToUrl,
+		_isDocumentOk: dojo._isDocumentOk,
 		get: dojo.xhrGet,
 		post: dojo.xhrPost,
 		put: dojo.xhrPut,

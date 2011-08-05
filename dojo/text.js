@@ -14,7 +14,7 @@ define(["./_base/kernel", "require", "./has", "./has!host-browser?./_base/xhr"],
 	var getText;
 	if(has("host-browser")){
 		getText= function(url, sync, load){
-			xhr("GET", {url:url, sync:sync, load:load});
+			xhr("GET", {url:url, sync:!!sync, load:load});
 		};
 	}else{
 		// TODOC: only works for dojo AMD loader
@@ -55,6 +55,8 @@ define(["./_base/kernel", "require", "./has", "./has!host-browser?./_base/xhr"],
 
 		notFound = {},
 
+		pending = {},
+
 		result= {
 			load:function(id, require, load){
 				// id is something like (path may be relative):
@@ -68,18 +70,28 @@ define(["./_base/kernel", "require", "./has", "./has!host-browser?./_base/xhr"],
 					url = require.toUrl(parts[0]),
 					text = notFound,
 					finish = function(text){
-						theCache[absMid]= theCache[url]= text;
 						load(stripFlag ? strip(text) : text);
 					};
 				if(absMid in theCache){
 					text = theCache[absMid];
-				}else if(absMid in require.cache){
-					text = require.cache[absMid];
+				}else if(url in require.cache){
+					text = require.cache[url];
 				}else if(url in theCache){
 					text = theCache[url];
 				}
 				if(text===notFound){
-					getText(url, !require.async, finish);
+					if(pending[url]){
+						pending[url].push(finish);
+					}else{
+						var pendingList = pending[url] = [finish];
+						getText(url, !require.async, function(text){
+							theCache[absMid]= theCache[url]= text;
+							for(var i = 0; i<pendingList.length;){
+								pendingList[i++](text);
+							}
+							delete pending[url];
+						});
+					}
 				}else{
 					finish(text);
 				}
@@ -132,7 +144,6 @@ define(["./_base/kernel", "require", "./has", "./has!host-browser?./_base/xhr"],
 		};
 
 		return result;
-});
 
 /*=====
 dojo.cache = function(module, url, value){
@@ -192,3 +203,5 @@ dojo.cache = function(module, url, value){
 	return val; //String
 };
 =====*/
+});
+

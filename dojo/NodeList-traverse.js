@@ -1,4 +1,4 @@
-define(["./main"], function(dojo) {
+define(["./_base/NodeList", "./_base/lang", "./_base/array", "./query"], function(NodeList, lang, array, dquery) {
 	// module:
 	//		dojo/NodeList-traverse
 	// summary:
@@ -9,9 +9,12 @@ define(["./main"], function(dojo) {
 dojo["NodeList-traverse"] = {
 	// summary: Adds a chainable methods to dojo.query() / Nodelist instances for traversing the DOM
 };
+
+// doc alias helpers:
+var lang = dojo, NodeList = dojo.NodeList;
 =====*/
 
-dojo.extend(dojo.NodeList, {
+lang.extend(NodeList, {
 	_buildArrayFromCallback: function(/*Function*/callback){
 		// summary:
 		// 		builds a new array of possibly differing size based on the input list.
@@ -38,7 +41,7 @@ dojo.extend(dojo.NodeList, {
 			//Should be a faster way to do this. dojo.query has a private
 			//_zip function that may be inspirational, but there are pathways
 			//in query that force nozip?
-			if(node.nodeType == 1 && dojo.indexOf(ary, node) == -1){
+			if(node.nodeType == 1 && array.indexOf(ary, node) == -1){
 				ary.push(node);
 			}
 		}
@@ -50,7 +53,7 @@ dojo.extend(dojo.NodeList, {
 		// 		gets unique element nodes, filters them further
 		// 		with an optional query and then calls _stash to track parent NodeList.
 		var ary = this._getUniqueAsNodeList(nodes);
-		ary = (query ? dojo._filterQueryResult(ary, query) : ary);
+		ary = (query ? dquery._filterResult(ary, query) : ary);
 		return ary._stash(this);  //dojo.NodeList
 	},
 
@@ -90,7 +93,7 @@ dojo.extend(dojo.NodeList, {
 		//	|	dojo.query(".container").children(".red");
 		//		returns the two divs that have the class "red".
 		return this._getRelatedUniqueNodes(query, function(node, ary){
-			return dojo._toArray(node.childNodes);
+			return lang._toArray(node.childNodes);
 		}); //dojo.NodeList
 	},
 
@@ -122,7 +125,7 @@ dojo.extend(dojo.NodeList, {
 		//		returns the div with class "container".
 		return this._getRelatedUniqueNodes(null, function(node, ary){
 			do{
-				if(dojo._filterQueryResult([node], query, root).length){
+				if(dquery._filterResult([node], query, root).length){
 					return node;
 				}
 			}while(node != root && (node = node.parentNode) && node.nodeType == 1);
@@ -500,5 +503,5 @@ dojo.extend(dojo.NodeList, {
 	}
 });
 
-return dojo.NodeList;
+return NodeList;
 });

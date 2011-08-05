@@ -1,4 +1,4 @@
-define(["./kernel", "./Color", "./connect", "./lang", "./html", "./sniff"], function(dojo){
+define(["./kernel", "./lang", "./Color", "./connect", "./lang", "./html", "./sniff"], function(dojo, lang){
 	// module:
 	//		dojo/_base/fx
 	// summary:
@@ -7,7 +7,7 @@ define(["./kernel", "./Color", "./connect", "./lang", "./html", "./sniff"], func
 	//		Animation loosely package based on Dan Pupius' work, contributed under CLA; see
 	//		http://pupius.co.uk/js/Toolkit.Drawing.js
 
-	var _mixin = dojo._mixin;
+	var _mixin = lang.mixin;
 
 	dojo._Line = function(/*int*/ start, /*int*/ end){
 		//	summary:
@@ -188,7 +188,7 @@ define(["./kernel", "./Color", "./connect", "./lang", "./html", "./sniff"], func
 				return _t;
 			}
 			_p();
-			return _t;
+			return _t;	// dojo.Animation
 		},
 
 		_play: function(gotoStart){
@@ -417,7 +417,7 @@ define(["./kernel", "./Color", "./connect", "./lang", "./html", "./sniff"], func
 
 	dojo._defaultEasing = function(/*Decimal?*/ n){
 		// summary: The default easing function for dojo.Animation(s)
-		return 0.5 + ((Math.sin((n + 1.5) * Math.PI)) / 2);
+		return 0.5 + ((Math.sin((n + 1.5) * Math.PI)) / 2);	// Decimal
 	};
 
 	var PropLine = function(properties){

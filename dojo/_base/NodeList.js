@@ -1,10 +1,14 @@
-define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
+define(["./kernel", "./lang", "../on", "../has", "./array", "./html"], function(dojo, lang, on, has){
   //  module:
   //    dojo/_base/NodeList
   //  summary:
   //    This module defines dojo.NodeList.
-
-	var ap = Array.prototype, aps = ap.slice, apc = ap.concat;
+	has.add("array-extensible", function(){
+		// test to see if we can extend an array (not supported in old IE)
+		return lang.delegate([], {length: 1}).length == 1;
+	});
+	
+	var ap = Array.prototype, aps = ap.slice, apc = ap.concat, forEach = dojo.forEach;
 
 	var tnl = function(/*Array*/ a, /*dojo.NodeList?*/ parent, /*Function?*/ NodeListCtor){
 		// summary:
@@ -19,15 +23,8 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 		//		An optional constructor function to use for any
 		//		new NodeList calls. This allows a certain chain of
 		//		NodeList calls to use a different object than dojo.NodeList.
-		if(!a.sort){
-			// make sure it's a real array before we pass it on to be wrapped
-			a = aps.call(a, 0);
-		}
-		var ctor = NodeListCtor || this._NodeListCtor || dojo._NodeListCtor;
-		a.constructor = ctor;
-		dojo._mixin(a, ctor.prototype);
-		a._NodeListCtor = ctor;
-		return parent ? a._stash(parent) : a;
+		var nodeList = new (NodeListCtor || this._NodeListCtor || nl)(a);
+		return parent ? nodeList._stash(parent) : nodeList;
 	};
 
 	var loopBody = function(f, a, o){
@@ -117,9 +114,9 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 	};
 	// FIXME: should we move orphan() to dojo.html?
 
-	dojo.NodeList = function(){
+	dojo.NodeList = function(array){
 		// summary:
-		//		dojo.NodeList is an of Array subclass which adds syntactic
+		//		dojo.NodeList is an of Array-like object which adds syntactic
 		//		sugar for chaining, common iteration operations, animation, and
 		//		node manipulation. NodeLists are most often returned as the
 		//		result of dojo.query() calls.
@@ -195,14 +192,38 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 		//		|		.at(1, 3, 8) // get a subset
 		//		|			.style("padding", "5px")
 		//		|			.forEach(console.log);
-
-		return tnl(Array.apply(null, arguments));
+		var isNew = this instanceof nl && has("array-extensible");
+		if(typeof array == "number"){
+			array = Array(array);
+		}
+		var nodeArray = (array && "length" in array) ? array : arguments;
+		if(isNew || !nodeArray.sort){
+			// make sure it's a real array before we pass it on to be wrapped 
+			var target = isNew ? this : [],
+				l = target.length = nodeArray.length;
+			for(var i = 0; i < l; i++){
+				target[i] = nodeArray[i];
+			}
+			if(isNew){
+				// called with new operator, this means we are going to use this instance and push
+				// the nodes on to it. This is usually much faster since the NodeList properties
+				//	don't need to be copied (unless the list of nodes is extremely large).
+				return target;
+			}
+			nodeArray = target;
+		}
+		// called without new operator, use a real array and copy prototype properties,
+		// this is slower and exists for back-compat. Should be removed in 2.0.
+		dojo._mixin(nodeArray, nlp);
+		nodeArray._NodeListCtor = function(array){
+			// call without new operator to preserve back-compat behavior
+			return nl(array);
+		}
+		return nodeArray;
 	};
-
-	//Allow things that new up a NodeList to use a delegated or alternate NodeList implementation.
-	dojo._NodeListCtor = dojo.NodeList;
-
-	var nl = dojo.NodeList, nlp = nl.prototype;
+	
+	var nl = dojo.NodeList, nlp = nl.prototype = 
+		has("array-extensible") ? [] : {};// extend an array if it is extensible
 
 	// expose adapters and the wrapper as private functions
 
@@ -215,7 +236,7 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 	// mass assignment
 
 	// add array redirectors
-	dojo.forEach(["slice", "splice"], function(name){
+	forEach(["slice", "splice"], function(name){
 		var f = ap[name];
 		//Use a copy of the this array via this.slice() to allow .end() to work right in the splice case.
 		// CANNOT apply ._stash()/end() to splice since it currently modifies
@@ -226,26 +247,33 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 	// concat should be here but some browsers with native NodeList have problems with it
 
 	// add array.js redirectors
-	dojo.forEach(["indexOf", "lastIndexOf", "every", "some"], function(name){
+	forEach(["indexOf", "lastIndexOf", "every", "some"], function(name){
 		var f = dojo[name];
 		nlp[name] = function(){ return f.apply(dojo, [this].concat(aps.call(arguments, 0))); };
 	});
-
+	
 	// add conditional methods
-	dojo.forEach(["attr", "style"], function(name){
+	forEach(["attr", "style"], function(name){
 		nlp[name] = adaptWithCondition(dojo[name], magicGuard);
 	});
 
 	// add forEach actions
-	dojo.forEach(["addClass", "removeClass", "replaceClass", "toggleClass", "empty", "removeAttr"], function(name){
+	forEach(["addClass", "removeClass", "replaceClass", "toggleClass", "empty", "removeAttr"], function(name){
 		nlp[name] = adaptAsForEach(dojo[name]);
 	});
 	// don't bind early to dojo.connect since we no longer explicitly depend on it
 	nlp.connect = adaptAsForEach(function(){
 		return dojo.connect.apply(this, arguments);
 	});
-	
+
 	dojo.extend(dojo.NodeList, {
+		// copy the constructors
+		constructor: nl,
+		_NodeListCtor: nl,
+		toString: function(){
+			// Array.prototype.toString can't be applied to objects, so we use join
+			return this.join(",");
+		},
 		_normalize: function(/*String||Element||Object||NodeList*/content, /*DOMNode?*/refNode){
 			// summary:
 			//		normalizes data to an array of items to insert.
@@ -378,7 +406,7 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 			// summary:
 			//		Listen for events on the nodes in the NodeList. Basic usage is:
 			//		| query(".my-class").on("click", listener);
-			// 		This supports event delegation by using selectors as the first argument with the event names as 
+			// 		This supports event delegation by using selectors as the first argument with the event names as
 			//		pseudo selectors. For example:
 			//		| dojo.query("#my-list").on("li:click", listener);
 			//		This will listen for click events within <li> elements that are inside the #my-list element.
@@ -415,7 +443,7 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 				return this._parent;
 			}else{
 				//Just return empty list.
-				return new this._NodeListCtor();
+				return new this._NodeListCtor(0);
 			}
 		},
 
@@ -589,7 +617,7 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 			//		see `dojo.forEach()`. The primary difference is that the acted-on
 			//		array is implicitly this NodeList. If you want the option to break out
 			//		of the forEach loop, use every() or some() instead.
-			dojo.forEach(this, callback, thisObj);
+			forEach(this, callback, thisObj);
 			// non-standard return to allow easier chaining
 			return this; // dojo.NodeList
 		},
@@ -813,11 +841,16 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 
 			// FIXME: probably slow
 			if(!queryStr){ return this; }
-			var ret = this.map(function(node){
+			var ret = new nl;
+			this.map(function(node){
 				// FIXME: why would we ever get undefined here?
-				return dojo.query(queryStr, node).filter(function(subNode){ return subNode !== undefined; });
+				dojo.query(queryStr, node).forEach(function(subNode){
+					if(subNode !== undefined){
+						ret.push(subNode);
+					}
+				});
 			});
-			return this._wrap(apc.apply([], ret), this);	// dojo.NodeList
+			return ret._stash(this);	// dojo.NodeList
 		},
 
 		filter: function(/*String|Function*/ filter){
@@ -935,7 +968,7 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 			// example:
 			//		Grabs all buttons in the page and converts them to diji.form.Buttons.
 			//	|	var buttons = dojo.query("button").instantiate("dijit.form.Button", {showLabel: true});
-			var c = dojo.isFunction(declaredClass) ? declaredClass : dojo.getObject(declaredClass);
+			var c = dojo.isFunction(declaredClass) ? declaredClass : lang.getObject(declaredClass);
 			properties = properties || {};
 			return this.forEach(function(node){
 				new c(properties, node);
@@ -969,8 +1002,8 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 			//
 			// returns:
 			//		dojo.NodeList
-			var t = new this._NodeListCtor();
-			dojo.forEach(arguments, function(i){
+			var t = new this._NodeListCtor(0);
+			forEach(arguments, function(i){
 				if(i < 0){ i = this.length + i }
 				if(this[i]){ t.push(this[i]); }
 			}, this);
@@ -990,7 +1023,7 @@ define(["./kernel", "../on", "./lang", "./array", "./html"], function(dojo, on){
 	// FIXME: pseudo-doc the above automatically generated on-event functions
 
 	// syntactic sugar for DOM events
-	dojo.forEach(nl.events, function(evt){
+	forEach(nl.events, function(evt){
 			var _oe = "on" + evt;
 			nlp[_oe] = function(a, b){
 				return this.connect(_oe, a, b);

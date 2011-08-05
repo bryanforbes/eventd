@@ -32,6 +32,11 @@
 				name: 'eventd',
 				location: '../eventd',
 				lib: '.'
+			},{
+				name: 'compose',
+				location: '../compose',
+				main: 'compose',
+				lib: '.'
 			}]
 		};
 	</script>
@@ -101,9 +106,9 @@
 				cls.remove(evt.target, "over");
 			});
 
-			mouse.click("chk1").then.delay(function(){
-				mouse.click("chk2").then.delay(function(){
-					mouse.click("chk1").then.delay(function(){
+			mouse.click("chk1").delay(1000).then(function(){
+				mouse.click("chk2").delay(1000).then(function(){
+					mouse.click("chk1").delay(1000).then(function(){
 						onMoveEvents(win.body());
 						mouse.move(300, 300, 2000, true);
 					},1000);

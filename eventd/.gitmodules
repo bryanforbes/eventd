@@ -1,0 +1,9 @@
+[submodule "tests/compose"]
+	path = tests/compose
+	url = git://github.com/kriszyp/compose.git
+[submodule "tests/dojo"]
+	path = tests/dojo
+	url = git://github.com/dojo/dojo.git
+[submodule "tests/dijit"]
+	path = tests/dijit
+	url = git://github.com/dojo/dijit.git

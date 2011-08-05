@@ -1,9 +1,9 @@
-define(['dojo/_base/lang', 'dojo/on'], function(lang, on){
+define(['compose', 'dojo/on'], function(Compose, on){
     var freeze = Object.freeze || function(){};
 
-    function Promise(){}
+    var Promise = Compose(function(){});
 
-    function Deferred(canceller){
+    var Deferred = Compose(Promise, function(canceller){
         this.fired = -1;
 
         var defd = this,
@@ -99,26 +99,15 @@ define(['dojo/_base/lang', 'dojo/on'], function(lang, on){
             return newDeferred.promise;
         }
 
-		function delay(resolvedCb, errorCb, del){
-			if(typeof errorCb == "number"){
-				del = errorCb;
-				errorCb = null;
-			}
+		function delay(del){
+			del = typeof del != "undefined" ? del : 300; 
 			return then(function(value){
-				var timeout,
-					ddef = new Deferred(function(){
-						if(timeout){
-							clearTimeout(timeout);
-							timeout = null;
-						}
-						promise.cancel();
-					}),
-					p = ddef.then(resolvedCb);
-				timeout = setTimeout(function(){
-					ddef.resolve(value);
-				}, del||300);
-				return p;
-			}, errorCb);
+				var promise = Deferred.setTimeout(function(){
+					return value;
+				}, del);
+
+				return promise;
+			});
 		}
 
         function cancel(){
@@ -141,38 +130,66 @@ define(['dojo/_base/lang', 'dojo/on'], function(lang, on){
         this.progress = progress;
         this.cancel = promise.cancel = cancel;
         this.then = promise.then = then;
-		then.delay = delay;
+		this.delay = promise.delay = delay;
 
         freeze(promise);
-    }
+    });
 
-    Deferred.prototype = lang.delegate(Promise.prototype, { constructor: Deferred });
     Deferred.Promise = Promise;
 
 	function event(node, type, async){
 		var timeout,
+			cancelled = 0,
 			d = new Deferred(function(){
-				if(async && timeout){
+				if(async && timeout && !cancelled){
+					cancelled = 1;
 					clearTimeout(timeout);
 					timeout = null;
 				}
-			}),
-			h = on(node, type, function(evt){
-				// make sure to disconnect this handler
-				h.remove();
-
-				if(async){
-					timeout = setTimeout(function(){
-						d.resolve(evt);
-					},2);
-				}else{
-					d.resolve(evt);
-				}
 			});
+
+		on.once(node, type,
+			async ?
+			function(evt){
+				timeout = setTimeout(function(){
+					if(cancelled){ return; }
+					d.resolve(evt);
+				},2);
+			} : function(evt){
+				d.resolve(evt);
+			}
+		);
 
 		return d.promise;
 	}
 	Deferred.event = event;
+
+	Deferred.setTimeout = function(callback, delay){
+		if(typeof callback == "number"){
+			delay = callback;
+			callback = undefined;
+		}
+
+		var cancelled = 0,
+			timeout,
+			d = new Deferred(function(){
+				if(timeout && !cancelled){
+					cancelled = 1;
+					clearTimeout(timeout);
+					timeout = null;
+				}
+			});
+
+		timeout = setTimeout(function(){
+			if(cancelled){ return; }
+			d.resolve();
+		}, delay);
+
+		if(callback){
+			return d.then(callback);
+		}
+		return d.promise;
+	};
 
     return Deferred;
 });

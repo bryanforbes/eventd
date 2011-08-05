@@ -1,7 +1,7 @@
 define(
 	["./_base/kernel", "./_base/lang", "./_base/array", "./_base/html", "./_base/window", "./_base/url",
-		"./_base/json", "./aspect", "./date/stamp", "./query"],
-	function(dojo, dlang, darray, dhtml, dwindow, _Url, djson, aspect, dates, query){
+		"./_base/json", "./aspect", "./date/stamp", "./query", "./on", "./ready"],
+	function(dojo, dlang, darray, dhtml, dwindow, _Url, djson, aspect, dates, query, don){
 
 // module:
 //		dojo/parser
@@ -126,7 +126,7 @@ dojo.parser = new function(){
 
 			var node = obj.node || obj,
 				type = dojoType in mixin ? mixin[dojoType] : obj.node ? obj.type : (node.getAttribute(dataDojoType) || node.getAttribute(dojoType)),
-				ctor = _ctorMap[type] || (_ctorMap[type] = dojo.getObject(type)),
+				ctor = _ctorMap[type] || (_ctorMap[type] = dlang.getObject(type)),
 				proto = ctor && ctor.prototype;
 			if(!ctor){
 				throw new Error("Could not load class '" + type);
@@ -139,11 +139,11 @@ dojo.parser = new function(){
 
 			if(args.defaults){
 				// settings for the document itself (or whatever subtree is being parsed)
-				dojo._mixin(params, args.defaults);
+				dlang.mixin(params, args.defaults);
 			}
 			if(obj.inherited){
 				// settings from dir=rtl or lang=... on a node above this node
-				dojo._mixin(params, obj.inherited);
+				dlang.mixin(params, obj.inherited);
 			}
 
 			// Get list of attributes explicitly listed in the markup
@@ -243,7 +243,7 @@ dojo.parser = new function(){
 							}else{
 								// The user has specified the name of a function like "myOnClick"
 								// or a single word function "return"
-								params[name] = dojo.getObject(value, false) || new Function(value);
+								params[name] = dlang.getObject(value, false) || new Function(value);
 							}
 							break;
 						default:
@@ -267,7 +267,7 @@ dojo.parser = new function(){
 			if(extra){
 				try{
 					extra = djson.fromJson.call(args.propsThis, "{" + extra + "}");
-					dojo._mixin(params, extra);
+					dlang.mixin(params, extra);
 				}catch(e){
 					// give the user a pointer to their invalid parameters. FIXME: can we kill this in production?
 					throw new Error(e.toString() + " in data-dojo-props='" + extra + "'");
@@ -275,7 +275,7 @@ dojo.parser = new function(){
 			}
 
 			// Any parameters specified in "mixin" override everything else.
-			dojo._mixin(params, mixin);
+			dlang.mixin(params, mixin);
 
 			var scripts = obj.node ? obj.scripts : (ctor && (ctor._noScript || proto._noScript) ? [] :
 						query("> script[type^='dojo/']", node));
@@ -284,10 +284,14 @@ dojo.parser = new function(){
 			// <script type="dojo/method" event="foo"> tags are added to params, and passed to
 			// the widget on instantiation.
 			// <script type="dojo/method"> tags (with no event) are executed after instantiation
-			// <script type="dojo/connect" event="foo"> tags are dojo.connected after instantiation
+			// <script type="dojo/connect" data-dojo-event="foo"> tags are dojo.connected after instantiation
+			// <script type="dojo/watch" data-dojo-prop="foo"> tags are dojo.watch after instantiation
+			// <script type="dojo/on" data-dojo-event="foo"> tags are dojo.on after instantiation
 			// note: dojo/* script tags cannot exist in self closing widgets, like <input />
 			var connects = [],	// functions to connect after instantiation
-				calls = [];		// functions to call after instantiation
+				calls = [],		// functions to call after instantiation
+				watch = [],  //functions to watch after instantiation
+				on = []; //functions to on after instantiation
 
 			if(scripts){
 				for(i=0; i<scripts.length; i++){
@@ -295,14 +299,19 @@ dojo.parser = new function(){
 					node.removeChild(script);
 					// FIXME: drop event="" support in 2.0. use data-dojo-event="" instead
 					var event = (script.getAttribute(attrData + "event") || script.getAttribute("event")),
+						prop = script.getAttribute(attrData + "prop"),
 						type = script.getAttribute("type"),
 						nf = this._functionFromScript(script, attrData);
 					if(event){
 						if(type == "dojo/connect"){
 							connects.push({event: event, func: nf});
+						}else if(type == "dojo/on"){
+							on.push({event: event, func: nf});
 						}else{
 							params[event] = nf;
 						}
+					}else if(type == "dojo/watch"){
+						watch.push({prop: prop, func: nf});
 					}else{
 						calls.push(nf);
 					}
@@ -316,7 +325,7 @@ dojo.parser = new function(){
 
 			// map it to the JS namespace if that makes sense
 			if(jsname){
-				dojo.setObject(jsname, instance);
+				dlang.setObject(jsname, instance);
 			}
 
 			// process connections and startup functions
@@ -325,6 +334,12 @@ dojo.parser = new function(){
 			}
 			for(i=0; i<calls.length; i++){
 				calls[i].call(instance);
+			}
+			for(i=0; i<watch.length; i++){
+				instance.watch(watch[i].prop, watch[i].func);
+			}
+			for(i=0; i<on.length; i++){
+				don(instance, on[i].event, on[i].func);
 			}
 		}, this);
 
@@ -547,7 +562,7 @@ dojo.parser = new function(){
 			};
 
 			// If dojoType/data-dojo-type specified, add to output array of nodes to instantiate
-			var ctor = type && (_ctorMap[type] || (_ctorMap[type] = dojo.getObject(type))), // note: won't find classes declared via dojo.Declaration
+			var ctor = type && (_ctorMap[type] || (_ctorMap[type] = dlang.getObject(type))), // note: won't find classes declared via dojo.Declaration
 				childScripts = ctor && !ctor.prototype._noScript ? [] : null; // <script> nodes that are parent's children
 			if(type){
 				list.push({
