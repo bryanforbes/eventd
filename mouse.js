@@ -1,18 +1,17 @@
 define([
 	'./main',
 	'./Deferred',
-	'dojo/_base/declare',
+	'compose',
 	'dojo/_base/sniff',
 	'dojo/on',
 	'dojo/_base/window',
 	'dojo/window',
-	'dojo/_base/array',
+	'dojo/array',
 	'dojo/dom-geometry',
-	'dojo/dom-construct',
 	'dojo/_base/fx',
 	'dojo/domReady!'
-], function(eventd, Deferred, declare, has, on, win, dwin, array, geom, constr, fx){
-	var MouseDefaults = declare(eventd.Defaults, {
+], function(eventd, Deferred, Compose, has, on, win, dwin, array, geom, fx){
+	var MouseDefaults = Compose(eventd.Defaults, {
 		click: {
 			left: 0,
 			right: 0
@@ -53,19 +52,24 @@ define([
 		}
 	})();
 
-	var getBox = (function(){
-		var body;
-		return function(){
-			if(win.body()){
-				getBox = function(){
-					return dwin.getBox();
-				};
-				return getBox();
-			}
-			return {};
-		};
-	})();
-	var MouseOptions = declare(eventd.Options, {
+	var MouseOptions = Compose(eventd.Options, function(type, options){
+		var docEl = win.doc.documentElement, viewport = dwin.getBox();
+
+		if(!this.clientX){
+			this.clientX = (this.pageX || 0) - (viewport.l || 0);
+		}
+		if(!this.clientY){
+			this.clientY = (this.pageY || 0) - (viewport.t || 0);
+		}
+		if(!this.relatedTarget){
+			this.relatedTarget = docEl;
+		}
+
+		var event = defaults[type] || defaults["click"];
+		if(this.button){
+			this.button = (this.button in event ? event[this.button] : 0);
+		}
+	},{
 		detail: 1,
 		screenX: 1,
 		screenY: 1,
@@ -78,49 +82,33 @@ define([
 		shiftKey: 0,
 		metaKey: 0,
 		button: "left",
-		relatedTarget: null,
-
-		constructor: function(type, options){
-			var docEl = win.doc.documentElement, viewport = getBox();
-
-			if(!this.clientX){
-				this.clientX = (this.pageX || 0) - (viewport.l || 0);
-			}
-			if(!this.clientY){
-				this.clientY = (this.pageY || 0) - (viewport.t || 0);
-			}
-			if(!this.relatedTarget){
-				this.relatedTarget = docEl;
-			}
-
-			var event = defaults[type] || defaults["click"];
-			if(this.button){
-				this.button = (this.button in event ? event[this.button] : 0);
-			}
-		}
+		relatedTarget: null
 	});
 
-	var MouseEvent = declare(eventd.Event, {
+	var MouseEvent = Compose(eventd.Event, {
 		optionsConstructor: MouseOptions
 	});
-	if(win.doc.createEvent){
-		MouseEvent.extend({
-			create: function(){
-				var event,
-					options = this.options;
-				try{
-					event = this.node.ownerDocument.createEvent("MouseEvents");
-					event.initMouseEvent(this.type, options.bubbles, options.cancelable, options.view,
-						options.detail, options.screenX, options.screenY, options.clientX, options.clientY,
-						options.ctrlKey, options.altKey, options.shiftKey, options.metaKey,
-						options.button, options.relatedTarget);
-					//options.copyToEvent(event);
-				}catch(e){
-					event = this.inherited(arguments);
-				}
 
-				return event;
-			}
+	if(has("event-create-event")){
+		Compose.call(MouseEvent.prototype, {
+			create: Compose.around(function(baseCreate){
+				return function(){
+					var event,
+						options = this.options;
+					try{
+						event = this.node.ownerDocument.createEvent("MouseEvents");
+						event.initMouseEvent(this.type, options.bubbles, options.cancelable, options.view,
+							options.detail, options.screenX, options.screenY, options.clientX, options.clientY,
+							options.ctrlKey, options.altKey, options.shiftKey, options.metaKey,
+							options.button, options.relatedTarget);
+						//options.copyToEvent(event);
+					}catch(e){
+						event = baseCreate.call(this, arguments);
+					}
+
+					return event;
+				};
+			})
 		});
 	}
 
@@ -128,26 +116,18 @@ define([
 
 	array.forEach(["MouseDown", "MouseUp", "Click", "DblClick", "MouseMove", "MouseOver", "MouseOut"],
 		function(name){
-			events[name] = declare(MouseEvent, {
+			events[name] = Compose(MouseEvent, {
 				type: name.toLowerCase()
 			});
 		}
 	);
 
 	if(defaults.contextmenu){
-		events.ContextMenu = declare(MouseEvent, {
+		events.ContextMenu = Compose(MouseEvent, {
 			type: "contextmenu"
 		});
 	}
 
-	// Run feature tests
-	var tests = {
-		mouseUDClicks:false,
-		clickFiresChange:false,
-		clickChecks:false,
-		clickSubmits:false,
-		changeChecks:false
-	};
 	var dispatch = eventd.dispatch;
 	(function(){
 		var div = win.doc.createElement("div");
@@ -159,7 +139,7 @@ define([
 		win.doc.documentElement.appendChild(div);
 
 		var h = on(div, "click", function(){
-			tests.mouseUDClicks = true;
+			has.add("mouse-up-down-clicks", 1);
 		});
 
 		dispatch(events.MouseDown, div, {});
@@ -170,25 +150,25 @@ define([
 		var check = div.firstChild.firstChild;
 
 		h = on(check, "change", function(){
-			tests.clickFiresChange = true;
+			has.add("mouse-click-fires-change", 1);
 		});
 		dispatch(events.Click, check, {});
-		tests.clickChecks = !!check.checked;
+		has.add("mouse-click-checks", !!check.checked);
 		h.remove();
 
 		check.checked = false;
 		h = on(check, "change", function(){
-			h.remove();
-			tests.changeChecks = !!check.checked;
+			has.add("mouse-change-checks", !!check.checked);
 		});
 		dispatch(eventd.events.Change, check, {});
+		h.remove();
 
 		var submit = div.firstChild.firstChild.nextSibling;
 		div.firstChild.onsubmit = function(e){
-			if(e.preventDefault){
+			if(e && e.preventDefault){
 				e.preventDefault();
 			}
-			tests.clickSubmits = true;
+			has.add("mouse-click-submits", 1);
 			return false;
 		};
 		(new events.Click(submit, {}))._dispatch();
@@ -199,26 +179,27 @@ define([
 	// These need to be attached after feature tests so they don't run
 	// during the tests
 	if(has("safari")){
-		events.MouseDown.extend({
+		Compose.call(events.MouseDown.prototype, {
 			preCreate: function(){
 				var name = this.node.nodeName.toLowerCase();
 				if(name == "select" || name == "option"){
-					var h = on(this.node, "mousedown", function(evt){
-						h.remove();
+					on.once(this.node, "mousedown", function(evt){
 						evt.preventDefault();
 					});
 				}
 			}
 		});
 	}
-	events.Click.extend({
+	Compose.call(events.Click.prototype, {
 		preCreate: function(){
 			var name = this.node.nodeName.toLowerCase();
 
-			if(name == "input" && !tests.clickChecks && !tests.clickChecks){
-				// if firing click or change doesn't check the box, we have to do it manually
-				if(this.node.type == "checkbox"){
-					this.node.checked = !this.node.checked;
+			if(!has("mouse-click-checks")){
+				if(name == "input"){
+					// if firing click or change doesn't check the box, we have to do it manually
+					if(this.node.type == "checkbox"){
+						this.node.checked = !this.node.checked;
+					}
 				}
 			}
 		},
@@ -226,8 +207,8 @@ define([
 			var node = this.node,
 				name = node.nodeName.toLowerCase();
 
-			if(name == "input"){
-				if(node.type == "checkbox" && !tests.clickFiresChange){
+			if(name == "input" && node.type == "checkbox"){
+				if(!has("mouse-click-fires-change")){
 					deferred.then(function(){
 						eventd.change(node);
 					});
@@ -236,7 +217,7 @@ define([
 		}
 	});
 
-	events.MouseDown.extend({
+	Compose.call(events.MouseDown.prototype, {
 		postDispatch: function(deferred){
 			var node = this.node;
 			deferred.then(function(){
@@ -263,16 +244,17 @@ define([
 		mouseout = Dispatcher(events.MouseOut),
 		mouseover = Dispatcher(events.MouseOver);
 
-	function XYLine(startX, endX, startY, endY){
+	var XYLine = Compose(function(startX, endX, startY, endY){
 		this.xLine = new fx._Line(startX, endX);
 		this.yLine = new fx._Line(startY, endY);
-	}
-	XYLine.prototype.getValue = function(/* float */ n){
-		return {
-			x: this.xLine.getValue(n),
-			y: this.yLine.getValue(n)
-		};
-	};
+	},{
+		getValue: function(/* float */ n){
+			return {
+				x: this.xLine.getValue(n),
+				y: this.yLine.getValue(n)
+			};
+		}
+	});
 
 	function wrapEvent(func){
 		return function(node, options){
@@ -288,22 +270,21 @@ define([
 		mousedown: wrapEvent(Dispatcher(events.MouseDown)),
 		mouseup: wrapEvent(Dispatcher(events.MouseUp)),
 		click: wrapEvent(function(node, options){
-			if(tests.mouseUDClicks){
+			if(has("mouse-up-down-clicks")){
 				// click fires automatically in Opera, so run
 				// preCreate and postDispatch
 				var d = Deferred.event(node, 'click');
 				d.then(function(){
-					var e = new events.Click(node, options, true);
+					var e = new events.Click(node, options, 1);
 					e.postDispatch(d);
 				});
 			}
 			return mouse.mousedown(node, options).then(function(){
 				return mouse.mouseup(node, options).then(function(){
-					if(!tests.mouseUDClicks){
+					if(!has("mouse-up-down-clicks")){
 						return click(node, options);
-					}else{
-						return d;
 					}
+					return d;
 				});
 			});
 		}),
@@ -375,7 +356,7 @@ define([
 
 						if(trace){
 							d.then(function(){
-								var n = constr.create("div", {});
+								var n = win.doc.createElement("div");
 								n.style.cssText = "width: 2px; height: 2px; background-color: blue; position: absolute; left: " + values.x + "px; top: " + values.y + "px;";
 								win.body().appendChild(n);
 							});
@@ -394,8 +375,7 @@ define([
 		})(),
 		events: events,
 		Defaults: MouseDefaults,
-		Options: MouseOptions,
-		tests: tests
+		Options: MouseOptions
 	};
 
 	return mouse;
