@@ -1,45 +1,41 @@
 define([
 	'./Deferred',
-	'dojo/_base/declare',
+	'compose',
 	'dojo/on',
 	'dojo/dom',
 	'dojo/_base/window',
-	'dojo/_base/lang',
 	'dojo/_base/sniff'
-], function(Deferred, declare, on, dom, win, lang, has){
+], function(Deferred, Compose, on, dom, win, has){
 
 	var op = Object.prototype,
 		opts = op.toString,
 		cname = "constructor";
 
-	var Options = declare(null, {
+	var Options = Compose(function(type, options){
+		this.type = type;
+
+		options = options || {};
+
+		for(var i in options){
+			if(!(i in op)){
+				this[i] = options[i];
+			}
+		}
+
+		if(!this.view){
+			this.view = win.global;
+		}
+	},{
 		bubbles: true,
 		cancelable: true,
 		view: null,
 
-		constructor: function(type, options){
-			this.type = type;
-
-			options = options || {};
-
-			for(var i in options){
-				if(!(i in op)){
-					this[i] = options[i];
-				}
-			}
-
-			if(!this.view){
-				this.view = win.global;
-			}
-		},
-
 		copyToEvent: function(event){
 			// this doesn't need to look for shadowed properties since
 			// they are all functions
-			var proto = this.constructor.prototype,
-				name, t;
-			// only copy primitive values of properties defined on the prototype
-			for(name in proto){
+			var name, t;
+			// only copy primitive values
+			for(name in this){
 				t = this[name];
 				if((t !== op[name] || !(name in op)) && name != cname){
 					switch(opts.call(t)){
@@ -60,16 +56,14 @@ define([
 		}
 	});
 
-	var Defaults = declare(null, {
-		constructor: function(specifics){
-			specifics = specifics || {};
-			for(var def in this){
-				if(!(def in op) && def in specifics){
-					if(typeof this[def] == "object" && typeof specifics[def] == "object"){
-						this[def] = lang.delegate(this[def], specifics[def]);
-					}else{
-						this[def] = specifics[def];
-					}
+	var Defaults = Compose(function(specifics){
+		specifics = specifics || {};
+		for(var def in this){
+			if(!(def in op) && def in specifics){
+				if(typeof this[def] == "object" && typeof specifics[def] == "object"){
+					this[def] = Compose.create(this[def], specifics[def]);
+				}else{
+					this[def] = specifics[def];
 				}
 			}
 		}
@@ -93,7 +87,34 @@ define([
 		}
 	}
 
-	var Event = declare(null, {
+	has.add("event-create-event", function(g, d){
+		return !!d.createEvent;
+	});
+
+	has.add("event-events", function(g, d){
+		if(!has("event-create-event")){
+			return;
+		}
+		try{
+			d.createEvent("Events");
+			return 1;
+		}catch(e){
+			return 0;
+		}
+	});
+
+	var Event = Compose(function(node, options, dontCreate){
+		this.node = dom.byId(node);
+
+		this.originalOptions = options;
+		this.options = new this.optionsConstructor(this.type, options);
+
+		this.preCreate();
+
+		if(!dontCreate){
+			this._event = this.create();
+		}
+	},{
 		node: null,
 		type: null,
 		originalOptions: null,
@@ -103,19 +124,6 @@ define([
 		_event: null,
 
 		optionsConstructor: Options,
-
-		constructor: function(node, options, dontCreate){
-			this.node = dom.byId(node);
-
-			this.originalOptions = options;
-			this.options = new this.optionsConstructor(this.type, options);
-
-			this.preCreate();
-
-			if(!dontCreate){
-				this._event = this.create();
-			}
-		},
 
 		preCreate: function(){},
 
@@ -129,9 +137,36 @@ define([
 		},
 		postDispatch: function(){}
 	});
+		
+	if(has("event-create-event")){
+		var eventName = "Events";
+		if(!has("event-events")){
+			eventName = "UIEvents";
+		}
+		Compose.call(Event.prototype, {
+			create: function(){
+				var event = win.doc.createEvent(eventName);
+				event.initEvent(this.type, this.options.bubbles, this.options.cancelable);
+				this.options.copyToEvent(event);
+				return event;
+			},
+			_dispatch: function(){
+				var event = this._event,
+					preventDefault = event.preventDefault,
+					prevented = 0;
 
-	if(!win.doc.createEvent){
-		Event.extend({
+				event.preventDefault = function(){
+					event._prevented = 1;
+					preventDefault.call(event);
+					prevented++;
+				};
+				this.node.dispatchEvent(event);
+
+				return prevented === 0;
+			}
+		});
+	}else{
+		Compose.call(Event.prototype, {
 			create: function(){
 				var event = this.node.ownerDocument.createEventObject();
 				this.options.copyToEvent(event);
@@ -145,49 +180,28 @@ define([
 				if(this.node.sourceIndex > 0){
 					return this.node.fireEvent("on"+this.type, this._event);
 				}
-				return false;
-			}
-		});
-	}else{
-		Event.extend({
-			create: function(){
-				var event;
-				try{
-					event = win.doc.createEvent("Events");
-				}catch(e){
-					event = win.doc.createEvent("UIEvents");
-				}
-				event.initEvent(this.type, this.options.bubbles, this.options.cancelable);
-				this.options.copyToEvent(event);
-				return event;
-			},
-			_dispatch: function(){
-				var event = this._event,
-					preventDefault = event.preventDefault,
-					prevented = 0;
-
-				event.preventDefault = function(){
-					event._prevented = true;
-					preventDefault.call(event);
-					prevented++;
-				};
-				this.node.dispatchEvent(event);
-
-				return prevented === 0;
+				return 0;
 			}
 		});
 	}
 
 	var events = {
-		Change: declare(Event, {
+		Change: Compose(Event, {
 			type: "change"
 		}),
-		Focus: declare(Event, {
+		Focus: Compose(Event, {
 			type: "focus",
 			asyncDeferred: !!has("ie"),
 			create: function(){},
 			_dispatch: function(){
 				this.node.focus();
+			}
+		}),
+		Blur: Compose(Event, {
+			type: "blur",
+			create: function(){},
+			_dispatch: function(){
+				this.node.blur();
 			}
 		})
 	};
@@ -195,6 +209,7 @@ define([
 	return {
 		change: Dispatcher(events.Change),
 		focus: Dispatcher(events.Focus),
+		blur: Dispatcher(events.Blur),
 
 		getNode: getNode,
 		Options: Options,
