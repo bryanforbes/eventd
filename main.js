@@ -1,73 +1,13 @@
 define([
 	'./Deferred',
 	'compose',
-	'dojo/on',
 	'dojo/dom',
-	'dojo/_base/window',
 	'dojo/_base/sniff'
-], function(Deferred, Compose, on, dom, win, has){
-
+], function(Deferred, Compose, dom, has){
 	var op = Object.prototype,
 		opts = op.toString,
-		cname = "constructor";
-
-	var Options = Compose(function(type, options){
-		this.type = type;
-
-		options = options || {};
-
-		for(var i in options){
-			if(!(i in op)){
-				this[i] = options[i];
-			}
-		}
-
-		if(!this.view){
-			this.view = win.global;
-		}
-	},{
-		bubbles: true,
-		cancelable: true,
-		view: null,
-
-		copyToEvent: function(event){
-			// this doesn't need to look for shadowed properties since
-			// they are all functions
-			var name, t;
-			// only copy primitive values
-			for(name in this){
-				t = this[name];
-				if((t !== op[name] || !(name in op)) && name != cname){
-					switch(opts.call(t)){
-						case "[object Function]":
-						case "[object Object]":
-						case "[object Array]":
-							// skip objects, arrays, and functions
-							break;
-						default:
-							// copy primitives
-							try{
-								event[name] = t;
-							}catch(e){}
-							break;
-					}
-				}
-			}
-		}
-	});
-
-	var Defaults = Compose(function(specifics){
-		specifics = specifics || {};
-		for(var def in this){
-			if(!(def in op) && def in specifics){
-				if(typeof this[def] == "object" && typeof specifics[def] == "object"){
-					this[def] = Compose.create(this[def], specifics[def]);
-				}else{
-					this[def] = specifics[def];
-				}
-			}
-		}
-	});
+		cname = "constructor",
+		global = this;
 
 	function Dispatcher(event){
 		return function(node, options){
@@ -85,6 +25,20 @@ define([
 		}else{
 			return dom.byId(node);
 		}
+	}
+
+	function wrapEvent(func, modifier){
+		return function(node, options){
+			node = eventd.getNode(node);
+			options = options || {};
+			modifier && modifier(node, options);
+
+			return func(node, options);
+		};
+	}
+
+	function wrapDispatcher(event, modifier){
+		return eventd.wrapEvent(Dispatcher(event), modifier);
 	}
 
 	has.add("event-create-event", function(g, d){
@@ -106,8 +60,7 @@ define([
 	var Event = Compose(function(node, options, dontCreate){
 		this.node = dom.byId(node);
 
-		this.originalOptions = options;
-		this.options = new this.optionsConstructor(this.type, options);
+		this.setOptions(options);
 
 		this.preCreate();
 
@@ -123,7 +76,40 @@ define([
 
 		_event: null,
 
-		optionsConstructor: Options,
+		baseOptions: {
+			bubbles: true,
+			cancelable: true,
+			view: global
+		},
+
+		setOptions: function(options){
+			this.originalOptions = options;
+			this.options = Compose.create(this.baseOptions, options);
+		},
+		copyOptions: function(event){
+			// this doesn't need to look for shadowed properties since
+			// they are all functions
+			var name, t, options = this.options;
+			// only copy primitive values
+			for(name in options){
+				t = options[name];
+				if((t !== op[name] || !(name in op)) && name != cname){
+					switch(opts.call(t)){
+						case "[object Function]":
+						case "[object Object]":
+						case "[object Array]":
+							// skip objects, arrays, and functions
+							break;
+						default:
+							// copy primitives
+							try{
+								event[name] = t;
+							}catch(e){}
+							break;
+					}
+				}
+			}
+		},
 
 		preCreate: function(){},
 
@@ -137,7 +123,7 @@ define([
 		},
 		postDispatch: function(){}
 	});
-		
+
 	if(has("event-create-event")){
 		var eventName = "Events";
 		if(!has("event-events")){
@@ -145,9 +131,9 @@ define([
 		}
 		Compose.call(Event.prototype, {
 			create: function(){
-				var event = win.doc.createEvent(eventName);
+				var event = this.node.ownerDocument.createEvent(eventName);
 				event.initEvent(this.type, this.options.bubbles, this.options.cancelable);
-				this.options.copyToEvent(event);
+				this.copyOptions(event);
 				return event;
 			},
 			_dispatch: function(){
@@ -169,12 +155,12 @@ define([
 		Compose.call(Event.prototype, {
 			create: function(){
 				var event = this.node.ownerDocument.createEventObject();
-				this.options.copyToEvent(event);
+				this.copyOptions(event);
 				return event;
 			},
 			_dispatch: function(){
 				try{
-					win.global.event = this._event;
+					global.event = this._event;
 				}catch(e){}
 				// a sourceIndex greater than 0 means the node is in the document
 				if(this.node.sourceIndex > 0){
@@ -206,17 +192,46 @@ define([
 		})
 	};
 
-	return {
+	function recursiveDelegate(object, source){
+		source = source || {};
+		var result = Compose.create(object, source);
+		for(var def in object){
+			if(typeof object[def] == "object" && typeof source[def] == "object"){
+				result[def] = recursiveDelegate(object[def], source[def]);
+			}
+		}
+		return result;
+	}
+
+	var eventd = {
+		global: global,
+		document: global.document,
+		body: function body(){
+			return eventd.document.body || eventd.document.getElementsByTagName("body")[0];
+		},
+
 		change: Dispatcher(events.Change),
 		focus: Dispatcher(events.Focus),
 		blur: Dispatcher(events.Blur),
 
+		delegateProperty: function(from, opts){
+			if(!opts){
+				opts = from;
+				from = Event;
+			}
+			return Compose.Decorator(function(key){
+				this[key] = Compose.create(from.prototype[key], opts);
+			});
+		},
+		recursiveDelegate: recursiveDelegate,
 		getNode: getNode,
-		Options: Options,
-		Defaults: Defaults,
+		wrapEvent: wrapEvent,
+		wrapDispatcher: wrapDispatcher,
 		Event: Event,
 		Dispatcher: Dispatcher,
 		dispatch: dispatch,
 		events: events
 	};
+
+	return eventd;
 });

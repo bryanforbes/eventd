@@ -13,20 +13,10 @@
 	</style>
 	<script>
 		var dojoConfig = {
-			async: true,
-			packages: [{
-				name: 'eventd',
-				location: '../..',
-				lib: '.'
-			},{
-				name: 'compose',
-				location: '../compose',
-				main: 'compose',
-				lib: '.'
-			}]
+			async: true
 		};
 	</script>
-	<script src="dojo/dojo.js"></script>
+	<script src="../../dojo/dojo.js"></script>
 </head>
 <body>
 	<input id="cbx" type="checkbox" />
@@ -34,7 +24,7 @@
 		<div id="container2" style="width: 100px; height: 100px; border: 1px solid blue;"></div>
 	</div>
 	<script>
-		require(['eventd/mouse', 'dojo/on', 'dojo/dom', 'dojo/dom-class', 'dojo/_base/window'], function(mouse, on, dom, cls, win){
+		require(['eventd/mouse-move', 'dojo/on', 'dojo/dom', 'dojo/dom-class', 'dojo/_base/window'], function(mouse, on, dom, cls, win){
 			/*on(dom.byId("container"), "mousemove", function(evt){
 				console.log("Move", evt);
 			});*/

@@ -4,43 +4,39 @@ define([
 	'dojo/on',
 	'dojo/query',
 	'dojo/dom-prop',
-	'dojo/array',
+	'dojo/_base/array',
 	'dojo/_base/sniff',
 	'dojo/keys',
-	'dojo/_base/window',
 	'dojo/domReady!'
-], function(eventd, Compose, on, query, domProp, array, has, keys, win){
+], function(eventd, Compose, on, query, domProp, array, has, keys){
 	var KEY_CODE			= 1, // keyCode set to key code
 		KEY_CODE_CHAR_CODE	= 2, // keyCode set to character code
 		CHAR_CODE			= 4, // charCode set to character code
 		CHAR_CODE_ZERO		= 8; // charCode set to 0
 
-	var KeyboardDefaults = Compose(eventd.Defaults, {
-		characters: {
-			keydown:  KEY_CODE,
-			keypress: KEY_CODE_CHAR_CODE,
-			keyup:    KEY_CODE
-		},
-		Enter: {
-			keydown:  KEY_CODE,
-			keypress: KEY_CODE,
-			keyup:    KEY_CODE
-		},
-		Backspace: {
-			keydown: KEY_CODE,
-			keyup: KEY_CODE
-		},
-		Special: {
-			keydown:  KEY_CODE,
-			keyup:    KEY_CODE
-		}
-	});
-
 	var defaults = (function(){
-		var defaults = KeyboardDefaults.prototype,
-			overrides;
+		var defaults = {
+			characters: {
+				keydown:  KEY_CODE,
+				keypress: KEY_CODE_CHAR_CODE,
+				keyup:    KEY_CODE
+			},
+			Enter: {
+				keydown:  KEY_CODE,
+				keypress: KEY_CODE,
+				keyup:    KEY_CODE
+			},
+			Backspace: {
+				keydown: KEY_CODE,
+				keyup: KEY_CODE
+			},
+			Special: {
+				keydown:  KEY_CODE,
+				keyup:    KEY_CODE
+			}
+		}, overrides;
 
-		if(has("webKit")){
+		if(has("webkit")){
 			overrides = {
 				characters: {
 					keydown:  defaults.characters.keydown  | CHAR_CODE_ZERO,
@@ -85,7 +81,7 @@ define([
 			};
 		}
 
-		return new KeyboardDefaults(overrides);
+		return eventd.recursiveDelegate(defaults, overrides);
 	})();
 
 	var specials = (function(){
@@ -97,64 +93,6 @@ define([
 	})();
 
 
-	var KeyboardOptions = Compose(eventd.Options, function(){
-		var key = this.key,
-			type = this.type,
-			keyOptions;
-
-		if(typeof key != "undefined"){
-			if(typeof key == "number" && array.indexOf(specials, key) > -1){
-				// keys.*
-				this.keyCode = key;
-				if(key == keys.ENTER){
-					key = '\r';
-					keyOptions = defaults.Enter[type];
-				}else if(key === keys.BACKSPACE){
-					key = '\b';
-					keyOptions = defaults.Backspace[type];
-				}else if(key >= keys.LEFT_ARROW && key <= keys.DOWN_ARROW){
-					keyOptions = defaults.Special[type];
-				}else if(key === keys.SPACE){
-					key = ' ';
-					keyOptions = defaults.characters[type];
-				}else{
-					keyOptions = defaults.Special[type];
-				}
-			}else if(key == '\r'){
-				keyOptions = defaults.Enter[type];
-			}else if(key == '\b'){
-				keyOptions = defaults.Backspace[type];
-			}else{
-				keyOptions = defaults.characters[type];
-			}
-
-			if(keyOptions & KEY_CODE){
-				if(typeof key == "string"){
-					this.keyCode = key.toUpperCase(0).charCodeAt(0);
-				}else{
-					this.keyCode = key;
-				}
-			}else if(keyOptions & KEY_CODE_CHAR_CODE){
-				this.keyCode = key.charCodeAt(0);
-			}else{
-				this.keyCode = 0;
-			}
-
-			if(keyOptions & CHAR_CODE){
-				this.charCode = key.charCodeAt(0);
-			}else if(keyOptions & CHAR_CODE_ZERO){
-				this.charCode = 0;
-			}
-		}
-	},{
-		ctrlKey: false,
-		altKey: false,
-		shiftKey: false,
-		metaKey: false,
-		keyCode: undefined,
-		charCode: undefined
-	});
-
 	has.add("events-key-events", function(g, d){
 		try{
 			d.createEvent("KeyEvents");
@@ -165,41 +103,96 @@ define([
 	});
 
 	var KeyboardEvent = Compose(eventd.Event, {
-		optionsConstructor: KeyboardOptions
+		baseOptions: eventd.delegateProperty({
+			ctrlKey: false,
+			altKey: false,
+			shiftKey: false,
+			metaKey: false,
+			keyCode: undefined,
+			charCode: undefined
+		}),
+		setOptions: Compose.after(function(){
+			var options = this.options,
+				key = options.key,
+				type = this.type,
+				keyOptions;
+
+			if(typeof key != "undefined"){
+				if(typeof key == "number" && array.indexOf(specials, key) > -1){
+					// keys.*
+					options.keyCode = key;
+					if(key == keys.ENTER){
+						key = '\r';
+						keyOptions = defaults.Enter[type];
+					}else if(key === keys.BACKSPACE){
+						key = '\b';
+						keyOptions = defaults.Backspace[type];
+					}else if(key >= keys.LEFT_ARROW && key <= keys.DOWN_ARROW){
+						keyOptions = defaults.Special[type];
+					}else if(key === keys.SPACE){
+						key = ' ';
+						keyOptions = defaults.characters[type];
+					}else{
+						keyOptions = defaults.Special[type];
+					}
+				}else if(key == '\r'){
+					keyOptions = defaults.Enter[type];
+				}else if(key == '\b'){
+					keyOptions = defaults.Backspace[type];
+				}else{
+					keyOptions = defaults.characters[type];
+				}
+
+				if(keyOptions & KEY_CODE){
+					if(typeof key == "string"){
+						options.keyCode = key.toUpperCase(0).charCodeAt(0);
+					}else{
+						options.keyCode = key;
+					}
+				}else if(keyOptions & KEY_CODE_CHAR_CODE){
+					options.keyCode = key.charCodeAt(0);
+				}else{
+					options.keyCode = 0;
+				}
+
+				if(keyOptions & CHAR_CODE){
+					options.charCode = key.charCodeAt(0);
+				}else if(keyOptions & CHAR_CODE_ZERO){
+					options.charCode = 0;
+				}
+			}
+		})
 	});
 
 	if(has("event-create-event")){
-		var createEvent;
-		if(has("event-key-events")){
-			createEvent = function(evtObj){
-				var options = evtObj.options,
-					event = event = evtObj.node.ownerDocument.createEvent("KeyEvents");
-
-				event.initKeyEvent(evtObj.type, options.bubbles, options.cancelable, options.view,
-					options.ctrlKey, options.altKey, options.shiftKey, options.metaKey,
-					options.keyCode, options.charCode);
-
-				return event;
-			};
-		}else{
-			createEvent = function(evtObj){
-				var options = evtObj.options,
-					event = evtObj.node.ownerDocument.createEvent("Events");
-
-				event.initEvent(evtObj.type, options.bubbles, options.cancelable, options.view);
-				options.copyToEvent(event);
-
-				return event;
-			};
-		}
-
 		Compose.call(KeyboardEvent.prototype, {
 			create: Compose.around(function(baseCreate){
+				var createEvent = has("event-key-events") ?
+					function(){
+						var options = this.options,
+							event = event = this.node.ownerDocument.createEvent("KeyEvents");
+
+						event.initKeyEvent(this.type, options.bubbles, options.cancelable, options.view,
+							options.ctrlKey, options.altKey, options.shiftKey, options.metaKey,
+							options.keyCode, options.charCode);
+
+						return event;
+					} :
+					function(){
+						var options = this.options,
+							event = this.node.ownerDocument.createEvent("Events");
+
+						event.initEvent(this.type, options.bubbles, options.cancelable, options.view);
+						this.copyOptions(event);
+
+						return event;
+					};
+
 				return function(){
 					try{
-						return createEvent(this);
+						return createEvent.call(this);
 					}catch(e){
-						return baseEvent(this, arguments);
+						return baseCreate.call(this);
 					}
 				};
 			})
@@ -216,10 +209,10 @@ define([
 	var dispatch = eventd.dispatch;
 
 	(function(){
-		var div = win.doc.createElement("div");
+		var div = eventd.document.createElement("div");
 		div.innerHTML = "<input type='input'/><input type='input'/>";
 
-		win.doc.documentElement.appendChild(div);
+		eventd.document.documentElement.appendChild(div);
 
 		var text1 = div.firstChild,
 			text2 = text1.nextSibling;
@@ -243,7 +236,7 @@ define([
 		text1.value = "";
 		var h;
 		try{
-			var e = win.doc.createEvent("TextEvent");
+			var e = eventd.document.createEvent("TextEvent");
 			has.add("kbd-text-events", typeof e.initTextEvent != "undefined");
 			try{
 				e.initTextEvent("textInput", true, true, null, "asdf");
@@ -272,36 +265,38 @@ define([
 		dispatch(events.KeyPress, text1, { key: '\r' });
 		h.remove();
 
-		win.doc.documentElement.removeChild(div);
+		eventd.document.documentElement.removeChild(div);
 	})();
 
 	if(has("kbd-text-events")){
-		var TextInputOptions = Compose(eventd.Options, {
-			data: ""
-		});
-
-		var initTextEvent;
-		if(has("kbd-ie-text-events")){
-			initTextEvent = function(event, object, options){
-				event.initTextEvent(object.type, options.bubbles, options.cancelable, options.view, options.data,
-									event.DOM_INPUT_METHOD_KEYBOARD, "en-US");
-			};
-		}else{
-			initTextEvent = function(event, object, options){
-				event.initTextEvent(object.type, options.bubbles, options.cancelable, options.view, options.data);
-			};
-		}
-
 		var TextInput = events.TextInput = Compose(eventd.Event, {
 			type: "textInput",
-			optionsConstructor: TextInputOptions,
-			create: function(){
-				var event = this.node.ownerDocument.createEvent("TextEvent");
+			baseOptions: eventd.delegateProperty({
+				data: ""
+			}),
+			create: Compose.around(function(baseCreate){
+				var initTextEvent = has("kbd-ie-text-events") ?
+					function(event, object, options){
+						event.initTextEvent(object.type, options.bubbles, options.cancelable,
+											options.view, options.data, event.DOM_INPUT_METHOD_KEYBOARD, "en-US");
+					} :
+					function(event, object, options){
+						event.initTextEvent(object.type, options.bubbles, options.cancelable,
+											options.view, options.data);
+					};
 
-				initTextEvent(event, this, this.options);
+				return function(){
+					try{
+						var event = this.node.ownerDocument.createEvent("TextEvent");
 
-				return event;
-			}
+						initTextEvent(event, this, this.options);
+
+						return event;
+					}catch(e){
+						return baseCreate.call(this);
+					}
+				};
+			})
 		});
 
 		if(!has("kbd-text-event-sets-value")){
@@ -318,14 +313,20 @@ define([
 		if(!has("kbd-text-event-fires-input")){
 			var Input = events.Input = Compose(eventd.Event, {
 				type: "input",
-				create: function(){
-					var event = this.node.ownerDocument.createEvent("Event"),
-						options = this.options;
+				create: Compose.around(function(baseCreate){
+					return function(){
+						try{
+							var event = this.node.ownerDocument.createEvent("Event"),
+								options = this.options;
 
-					event.initEvent(this.type, options.bubbles, options.cancelable, options.view);
+							event.initEvent(this.type, options.bubbles, options.cancelable, options.view);
 
-					return event;
-				}
+							return event;
+						}catch(e){
+							return baseCreate.call(this);
+						}
+					};
+				})
 			});
 		}
 	}else if(!has("kbd-press-chars")){
@@ -591,7 +592,7 @@ define([
 	}
 
 	var _focusNode;
-	on(win.body(), "*:focus", function(evt){
+	on(eventd.body(), "*:focus", function(evt){
 		_focusNode = this;
 	});
 	/*on(win.body(), "*:blur", function(evt){
@@ -630,20 +631,14 @@ define([
 		}
 	}
 
-	var Dispatcher = eventd.Dispatcher;
-
-	function wrapEvent(func){
-		return function(node, options){
-			node = eventd.getNode(node);
-
-			return func(node, options);
-		};
-	}
+	var wrapDispatcher = eventd.wrapDispatcher,
+		wrapEvent = eventd.wrapEvent;
 
 	return {
-		keydown: wrapEvent(Dispatcher(events.KeyDown)),
-		keypress: wrapEvent(Dispatcher(events.KeyPress)),
-		keyup: wrapEvent(Dispatcher(events.KeyUp)),
+		Event: KeyboardEvent,
+		keydown: wrapDispatcher(events.KeyDown),
+		keypress: wrapDispatcher(events.KeyPress),
+		keyup: wrapDispatcher(events.KeyUp),
 		keystroke: wrapEvent(function(node, character){
 			return KeySequence(node, character);
 		}),
@@ -651,8 +646,6 @@ define([
 			delayBetween = delayBetween || 50;
 			return KeySequence(node, characters, delayBetween);
 		}),
-		events: events,
-		Defaults: KeyboardDefaults,
-		Options: KeyboardOptions
+		events: events
 	};
 });

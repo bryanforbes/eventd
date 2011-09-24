@@ -11,20 +11,10 @@
 	</style>
 	<script>
 		var dojoConfig = {
-			async: true,
-			packages: [{
-				name: 'eventd',
-				location: '../..',
-				lib: '.'
-			},{
-				name: 'compose',
-				location: '../compose',
-				main: 'compose',
-				lib: '.'
-			}]
+			async: true
 		};
 	</script>
-	<script src="dojo/dojo.js"></script>
+	<script src="../../dojo/dojo.js"></script>
 	<script>
 		var key, on;
 		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom', 'dojo/_base/kernel'], function(mouse, keyboard, dom, dojo){
