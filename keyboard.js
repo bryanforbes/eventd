@@ -3,12 +3,11 @@ define([
 	'compose',
 	'dojo/on',
 	'dojo/query',
-	'dojo/dom-prop',
 	'dojo/_base/array',
 	'dojo/_base/sniff',
 	'dojo/keys',
 	'dojo/domReady!'
-], function(eventd, Compose, on, query, domProp, array, has, keys){
+], function(eventd, Compose, on, query, array, has, keys){
 	var KEY_CODE			= 1, // keyCode set to key code
 		KEY_CODE_CHAR_CODE	= 2, // keyCode set to character code
 		CHAR_CODE			= 4, // charCode set to character code
@@ -567,7 +566,7 @@ define([
 			none = [];
 
 		query("*[tabindex],a,area,button,input,object,select,textarea").forEach(function(node){
-			var tabindex = parseInt(domProp.get(node, "tabIndex"), 10);
+			var tabindex = parseInt(node.tabIndex, 10);
 
 			if(isNaN(tabindex)){
 				none.push(node);
