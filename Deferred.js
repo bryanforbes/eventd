@@ -137,7 +137,7 @@ define(['compose', 'dojo/on'], function(Compose, on){
 
     Deferred.Promise = Promise;
 
-	function event(node, type, async){
+	Deferred.on = function(node, type, async){
 		var timeout,
 			cancelled = 0,
 			d = new Deferred(function(){
@@ -161,8 +161,7 @@ define(['compose', 'dojo/on'], function(Compose, on){
 		);
 
 		return d.promise;
-	}
-	Deferred.event = event;
+	};
 
 	Deferred.setTimeout = function(callback, delay){
 		if(typeof callback == "number"){

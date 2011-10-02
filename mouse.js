@@ -250,7 +250,7 @@ define([
 			if(has("mouse-up-down-clicks")){
 				// click fires automatically in Opera, so run
 				// preDispatch and postDispatch
-				var d = Deferred.event(node, 'click');
+				var d = Deferred.on(node, 'click');
 				d.then(function(){
 					events.Click.prototype.preDispatch.call({
 						node: node

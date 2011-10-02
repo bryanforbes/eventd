@@ -84,7 +84,7 @@ define([
 
 		preDispatch: null,
 		dispatch: function(){
-			var d = Deferred.event(this.node, this.type, this.asyncDeferred);
+			var d = Deferred.on(this.node, this.type, this.asyncDeferred);
 
 			this.preDispatch && this.preDispatch();
 			var res = this._dispatch();
