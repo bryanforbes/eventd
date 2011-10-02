@@ -1,9 +1,10 @@
 define([
+	'exports',
 	'./Deferred',
 	'compose',
 	'dojo/dom',
 	'dojo/_base/sniff'
-], function(Deferred, Compose, dom, has){
+], function(exports, Deferred, Compose, dom, has){
 	var op = Object.prototype,
 		opts = op.toString,
 		cname = "constructor",
@@ -163,11 +164,11 @@ define([
 		})
 	};
 
-	var eventd = {
+	Compose.call(exports, {
 		global: global,
 		document: global.document,
 		body: function body(){
-			return eventd.document.body || eventd.document.getElementsByTagName("body")[0];
+			return exports.document.body || exports.document.getElementsByTagName("body")[0];
 		},
 
 		change: Dispatcher(events.Change),
@@ -189,7 +190,7 @@ define([
 					var objValue = object[key],
 						ovrValue = overrides[key];
 					if(objValue && typeof objValue == "object" && ovrValue && typeof ovrValue == "object"){
-						eventd.recursiveMix(objValue, ovrValue);
+						exports.recursiveMix(objValue, ovrValue);
 					}else if(ovrValue !== op[key]){
 						object[key] = ovrValue;
 					}
@@ -209,7 +210,7 @@ define([
 
 		wrapEvent: function wrapEvent(func, modifier){
 			return function(node, options){
-				node = eventd.getNode(node);
+				node = exports.getNode(node);
 				options = options || {};
 				modifier && modifier(node, options);
 
@@ -217,14 +218,12 @@ define([
 			};
 		},
 		wrapDispatcher: function wrapDispatcher(event, modifier){
-			return eventd.wrapEvent(eventd.Dispatcher(event), modifier);
+			return exports.wrapEvent(exports.Dispatcher(event), modifier);
 		},
 
 		Event: Event,
 		Dispatcher: Dispatcher,
 		dispatch: dispatch,
 		events: events
-	};
-
-	return eventd;
+	});
 });

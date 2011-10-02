@@ -1,4 +1,5 @@
 define([
+	'exports',
 	'./main',
 	'./Deferred',
 	'compose',
@@ -6,7 +7,7 @@ define([
 	'dojo/on',
 	'dojo/dom-geometry',
 	'dojo/domReady!'
-], function(eventd, Deferred, Compose, has, on, geom){
+], function(exports, eventd, Deferred, Compose, has, on, geom){
 	var defaults = (function(undefined){
 		var overrides;
 		if(has("ie")){
@@ -242,7 +243,7 @@ define([
 		mouseout = Dispatcher(events.MouseOut),
 		mouseover = Dispatcher(events.MouseOver);
 
-	var mouse = {
+	Compose.call(exports, {
 		Event: MouseEvent,
 		mousedown: wrapDispatcher(events.MouseDown, addPosition),
 		mouseup: wrapDispatcher(events.MouseUp, addPosition),
@@ -260,8 +261,8 @@ define([
 					}, d);
 				});
 			}
-			return mouse.mousedown(node, options).then(function(){
-				return mouse.mouseup(node, options).then(function(){
+			return exports.mousedown(node, options).then(function(){
+				return exports.mouseup(node, options).then(function(){
 					if(!has("mouse-up-down-clicks")){
 						return click(node, options);
 					}
@@ -270,29 +271,27 @@ define([
 			});
 		}, addPosition),
 		dblclick: wrapEvent(function(node, options){
-			return mouse.click(node, options).then(function(){
-				return mouse.click(node, options).then(function(){
+			return exports.click(node, options).then(function(){
+				return exports.click(node, options).then(function(){
 					return dblclick(node, options);
 				});
 			});
 		}, addPosition),
 		_overTarget: null,
 		mouseover: wrapEvent(function(node, options){
-			if(mouse._overTarget){
-				mouse.mouseout(mouse._overTarget);
+			if(exports._overTarget){
+				exports.mouseout(exports._overTarget);
 			}
 			return mouseover(node, options).then(function(){
-				mouse._overTarget = node;
+				exports._overTarget = node;
 			});
 		}, addPosition),
 		mouseout: wrapEvent(function(node, options){
 			return mouseout(node, options).then(function(){
-				mouse._overTarget = null;
+				exports._overTarget = null;
 			});
 		}, addPosition),
 		addPosition: addPosition,
 		events: events
-	};
-
-	return mouse;
+	});
 });

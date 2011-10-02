@@ -1,4 +1,5 @@
 define([
+	'exports',
 	'./main',
 	'compose',
 	'dojo/on',
@@ -7,7 +8,7 @@ define([
 	'dojo/_base/sniff',
 	'dojo/keys',
 	'dojo/domReady!'
-], function(eventd, Compose, on, query, array, has, keys){
+], function(exports, eventd, Compose, on, query, array, has, keys){
 	var KEY_CODE			= 1, // keyCode set to key code
 		KEY_CODE_CHAR_CODE	= 2, // keyCode set to character code
 		CHAR_CODE			= 4, // charCode set to character code
@@ -633,7 +634,7 @@ define([
 	var wrapDispatcher = eventd.wrapDispatcher,
 		wrapEvent = eventd.wrapEvent;
 
-	return {
+	Compose.call(exports, {
 		Event: KeyboardEvent,
 		keydown: wrapDispatcher(events.KeyDown),
 		keypress: wrapDispatcher(events.KeyPress),
@@ -646,5 +647,5 @@ define([
 			return KeySequence(node, characters, delayBetween);
 		}),
 		events: events
-	};
+	});
 });
