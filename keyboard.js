@@ -14,7 +14,7 @@ define([
 		CHAR_CODE_ZERO		= 8; // charCode set to 0
 
 	var defaults = (function(){
-		var defaults = {
+		var base = {
 			characters: {
 				keydown:  KEY_CODE,
 				keypress: KEY_CODE_CHAR_CODE,
@@ -38,49 +38,49 @@ define([
 		if(has("webkit")){
 			overrides = {
 				characters: {
-					keydown:  defaults.characters.keydown  | CHAR_CODE_ZERO,
-					keypress: defaults.characters.keypress | CHAR_CODE,
-					keyup:	  defaults.characters.keyup    | CHAR_CODE_ZERO
+					keydown:  base.characters.keydown  | CHAR_CODE_ZERO,
+					keypress: base.characters.keypress | CHAR_CODE,
+					keyup:	  base.characters.keyup    | CHAR_CODE_ZERO
 				},
 				Enter: {
-					keydown:  defaults.Enter.keydown  | CHAR_CODE_ZERO,
-					keypress: defaults.Enter.keypress | CHAR_CODE,
-					keyup:	  defaults.Enter.keyup    | CHAR_CODE_ZERO
+					keydown:  base.Enter.keydown  | CHAR_CODE_ZERO,
+					keypress: base.Enter.keypress | CHAR_CODE,
+					keyup:	  base.Enter.keyup    | CHAR_CODE_ZERO
 				},
 				Backspace: {
-					keydown: defaults.Backspace.keydown | CHAR_CODE_ZERO,
-					keyup:	 defaults.Backspace.keyup	| CHAR_CODE_ZERO
+					keydown: base.Backspace.keydown | CHAR_CODE_ZERO,
+					keyup:	 base.Backspace.keyup	| CHAR_CODE_ZERO
 				},
 				Special: {
-					keydown:  defaults.Enter.keydown  | CHAR_CODE_ZERO,
-					keyup:	  defaults.Enter.keyup    | CHAR_CODE_ZERO
+					keydown:  base.Enter.keydown  | CHAR_CODE_ZERO,
+					keyup:	  base.Enter.keyup    | CHAR_CODE_ZERO
 				}
 			};
 		}else if(has("ff")){
 			overrides = {
 				characters: {
-					keydown:  defaults.characters.keydown  | CHAR_CODE_ZERO,
+					keydown:  base.characters.keydown  | CHAR_CODE_ZERO,
 					keypress: /* keyCode set to 0 */		 CHAR_CODE,
-					keyup:	  defaults.characters.keyup    | CHAR_CODE_ZERO
+					keyup:	  base.characters.keyup    | CHAR_CODE_ZERO
 				},
 				Enter: {
-					keydown:  defaults.Enter.keydown  | CHAR_CODE_ZERO,
-					keypress: defaults.Enter.keypress | CHAR_CODE_ZERO,
-					keyup:	  defaults.Enter.keyup    | CHAR_CODE_ZERO
+					keydown:  base.Enter.keydown  | CHAR_CODE_ZERO,
+					keypress: base.Enter.keypress | CHAR_CODE_ZERO,
+					keyup:	  base.Enter.keyup    | CHAR_CODE_ZERO
 				},
 				Backspace: {
-					keydown:  defaults.Backspace.keydown | CHAR_CODE_ZERO,
+					keydown:  base.Backspace.keydown | CHAR_CODE_ZERO,
 					keypress: KEY_CODE					 | CHAR_CODE_ZERO,
-					keyup:	  defaults.Backspace.keyup	 | CHAR_CODE_ZERO
+					keyup:	  base.Backspace.keyup	 | CHAR_CODE_ZERO
 				},
 				Special: {
-					keydown:  defaults.Enter.keydown  | CHAR_CODE_ZERO,
-					keyup:	  defaults.Enter.keyup    | CHAR_CODE_ZERO
+					keydown:  base.Enter.keydown  | CHAR_CODE_ZERO,
+					keyup:	  base.Enter.keyup    | CHAR_CODE_ZERO
 				}
 			};
 		}
 
-		return eventd.recursiveDelegate(defaults, overrides);
+		return eventd.recursiveMix(base, overrides);
 	})();
 
 	var specials = (function(){

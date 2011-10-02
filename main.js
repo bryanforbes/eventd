@@ -19,28 +19,6 @@ define([
 		return (new event(node, options))._dispatch();
 	}
 
-	function getNode(node){
-		if(typeof node != "string"){
-			return node.focusNode || node.domNode || node;
-		}else{
-			return dom.byId(node);
-		}
-	}
-
-	function wrapEvent(func, modifier){
-		return function(node, options){
-			node = eventd.getNode(node);
-			options = options || {};
-			modifier && modifier(node, options);
-
-			return func(node, options);
-		};
-	}
-
-	function wrapDispatcher(event, modifier){
-		return eventd.wrapEvent(Dispatcher(event), modifier);
-	}
-
 	has.add("event-create-event", function(g, d){
 		return !!d.createEvent;
 	});
@@ -70,7 +48,6 @@ define([
 	},{
 		node: null,
 		type: null,
-		originalOptions: null,
 		options: null,
 		asyncDeferred: false,
 
@@ -83,7 +60,6 @@ define([
 		},
 
 		setOptions: function(options){
-			this.originalOptions = options;
 			this.options = Compose.create(this.baseOptions, options);
 		},
 		copyOptions: function(event){
@@ -192,17 +168,6 @@ define([
 		})
 	};
 
-	function recursiveDelegate(object, source){
-		source = source || {};
-		var result = Compose.create(object, source);
-		for(var def in object){
-			if(typeof object[def] == "object" && typeof source[def] == "object"){
-				result[def] = recursiveDelegate(object[def], source[def]);
-			}
-		}
-		return result;
-	}
-
 	var eventd = {
 		global: global,
 		document: global.document,
@@ -214,7 +179,7 @@ define([
 		focus: Dispatcher(events.Focus),
 		blur: Dispatcher(events.Blur),
 
-		delegateProperty: function(from, opts){
+		delegateProperty: function delegateProperty(from, opts){
 			if(!opts){
 				opts = from;
 				from = Event;
@@ -223,10 +188,43 @@ define([
 				this[key] = Compose.create(from.prototype[key], opts);
 			});
 		},
-		recursiveDelegate: recursiveDelegate,
-		getNode: getNode,
-		wrapEvent: wrapEvent,
-		wrapDispatcher: wrapDispatcher,
+		recursiveMix: function recursiveMix(object, overrides){
+			if(overrides){
+				for(var key in object){
+					var objValue = object[key],
+						ovrValue = overrides[key];
+					if(objValue && typeof objValue == "object" && ovrValue && typeof ovrValue == "object"){
+						eventd.recursiveMix(objValue, ovrValue);
+					}else if(ovrValue !== op[key]){
+						object[key] = ovrValue;
+					}
+				}
+			}
+
+			return object;
+		},
+
+		getNode: function getNode(node){
+			if(typeof node != "string"){
+				return node.focusNode || node.domNode || node;
+			}else{
+				return dom.byId(node);
+			}
+		},
+
+		wrapEvent: function wrapEvent(func, modifier){
+			return function(node, options){
+				node = eventd.getNode(node);
+				options = options || {};
+				modifier && modifier(node, options);
+
+				return func(node, options);
+			};
+		},
+		wrapDispatcher: function wrapDispatcher(event, modifier){
+			return eventd.wrapEvent(eventd.Dispatcher(event), modifier);
+		},
+
 		Event: Event,
 		Dispatcher: Dispatcher,
 		dispatch: dispatch,

@@ -26,7 +26,7 @@ define([
 				contextmenu: undefined
 			};
 		}
-		return eventd.recursiveDelegate({
+		return eventd.recursiveMix({
 			click: {
 				left: 0,
 				right: 0
