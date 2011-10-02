@@ -176,7 +176,7 @@ define([
 	// during the tests
 	if(has("safari")){
 		Compose.call(events.MouseDown.prototype, {
-			preCreate: function(){
+			preDispatch: function(){
 				var name = this.node.nodeName.toLowerCase();
 				if(name == "select" || name == "option"){
 					on.once(this.node, "mousedown", function(evt){
@@ -187,7 +187,7 @@ define([
 		});
 	}
 	Compose.call(events.Click.prototype, {
-		preCreate: function(){
+		preDispatch: function(){
 			var name = this.node.nodeName.toLowerCase();
 
 			if(!has("mouse-click-checks")){
@@ -249,11 +249,15 @@ define([
 		click: wrapEvent(function(node, options){
 			if(has("mouse-up-down-clicks")){
 				// click fires automatically in Opera, so run
-				// preCreate and postDispatch
+				// preDispatch and postDispatch
 				var d = Deferred.event(node, 'click');
 				d.then(function(){
-					var e = new events.Click(node, options, 1);
-					e.postDispatch(d);
+					events.Click.prototype.preDispatch.call({
+						node: node
+					});
+					events.Click.prototype.postDispatch.call({
+						node: node
+					}, d);
 				});
 			}
 			return mouse.mousedown(node, options).then(function(){

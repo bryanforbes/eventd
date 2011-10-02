@@ -35,16 +35,11 @@ define([
 		}
 	});
 
-	var Event = Compose(function(node, options, dontCreate){
+	var Event = Compose(function(node, options){
 		this.node = dom.byId(node);
-
 		this.setOptions(options);
 
-		this.preCreate();
-
-		if(!dontCreate){
-			this._event = this.create();
-		}
+		this._event = this.create();
 	},{
 		node: null,
 		type: null,
@@ -87,17 +82,17 @@ define([
 			}
 		},
 
-		preCreate: function(){},
-
+		preDispatch: null,
 		dispatch: function(){
 			var d = Deferred.event(this.node, this.type, this.asyncDeferred);
 
+			this.preDispatch && this.preDispatch();
 			var res = this._dispatch();
-			res && this.postDispatch(d);
+			this.postDispatch && res && this.postDispatch(d);
 
 			return d;
 		},
-		postDispatch: function(){}
+		postDispatch: null
 	});
 
 	if(has("event-create-event")){
