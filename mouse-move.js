@@ -9,19 +9,20 @@ define([
 		type: "mousemove"
 	});
 
-	var XYLine = Compose(function(startX, endX, startY, endY){
-		this.xLine = new fx._Line(startX, endX);
-		this.yLine = new fx._Line(startY, endY);
-	},{
-		getValue: function(/* float */ n){
-			return {
-				x: this.xLine.getValue(n),
-				y: this.yLine.getValue(n)
-			};
-		}
-	});
+	function XYLine(startX, endX, startY, endY){
+		var xLine = new fx._Line(startX, endX);
+		var yLine = new fx._Line(startY, endY);
+		return {
+			getValue: function(/* float */ n){
+				return {
+					x: xLine.getValue(n),
+					y: yLine.getValue(n)
+				};
+			}
+		};
+	}
 
-	Compose.call(mouse, {
+	return Compose.call(mouse, {
 		mousemove: eventd.wrapDispatcher(MouseMove, mouse.addPosition),
 		_current: { x: 0, y: 0 },
 		move: (function(){
@@ -40,32 +41,24 @@ define([
 						a && a.stop();
 					});
 				var a = new fx.Animation({
-					curve: new XYLine(mouse._current.x, clientX, mouse._current.y, clientY),
+					curve: XYLine(mouse._current.x, clientX, mouse._current.y, clientY),
 					duration: duration || fx.Animation.prototype.duration,
 					onAnimate: function(values){
 						var node = eventd.document.elementFromPoint(values.x, values.y);
 						if(lastNode){
 							if(lastNode !== node){
-								if(d){
-									d = d.then(function(){
-										return outOver(lastNode, node);
-									});
-								}else{
-									d = outOver(lastNode);
-								}
+								d = Deferred.when(d, function(){
+									return outOver(lastNode, node);
+								});
 								lastNode = node;
 							}
 						}else{
 							lastNode = node;
 						}
 
-						if(d){
-							d.then(function(){
-								move(lastNode, values.x, values.y);
-							});
-						}else{
-							d = move(lastNode, values.x, values.y);
-						}
+						d = Deferred.when(d, function(){
+							return move(lastNode, values.x, values.y);
+						});
 
 						if(trace){
 							d.then(function(){
@@ -87,6 +80,4 @@ define([
 			};
 		})()
 	});
-
-	return mouse;
 });
