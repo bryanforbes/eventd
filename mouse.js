@@ -86,7 +86,7 @@ define([
 	});
 
 	if(has("event-create-event")){
-		Compose.call(MouseEvent.prototype, {
+		Compose.modify(MouseEvent, {
 			create: Compose.around(function(baseCreate){
 				return function(){
 					var event,
@@ -97,7 +97,6 @@ define([
 							options.detail, options.screenX, options.screenY, options.clientX, options.clientY,
 							options.ctrlKey, options.altKey, options.shiftKey, options.metaKey,
 							options.button, options.relatedTarget);
-						//options.copyToEvent(event);
 					}catch(e){
 						event = baseCreate.call(this, arguments);
 					}
@@ -176,7 +175,7 @@ define([
 	// These need to be attached after feature tests so they don't run
 	// during the tests
 	if(has("safari")){
-		Compose.call(events.MouseDown.prototype, {
+		Compose.modify(events.MouseDown, {
 			preDispatch: function(){
 				var name = this.node.nodeName.toLowerCase();
 				if(name == "select" || name == "option"){
@@ -187,7 +186,7 @@ define([
 			}
 		});
 	}
-	Compose.call(events.Click.prototype, {
+	Compose.modify(events.Click, {
 		preDispatch: function(){
 			var name = this.node.nodeName.toLowerCase();
 
@@ -214,7 +213,7 @@ define([
 		}
 	});
 
-	Compose.call(events.MouseDown.prototype, {
+	Compose.modify(events.MouseDown, {
 		postDispatch: function(deferred){
 			var node = this.node;
 			deferred.then(function(){
