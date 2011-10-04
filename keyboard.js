@@ -93,7 +93,7 @@ define([
 	})();
 
 
-	has.add("events-key-events", function(g, d){
+	has.add("event-key-events", function(g, d){
 		try{
 			d.createEvent("KeyEvents");
 			return 1;
@@ -164,11 +164,11 @@ define([
 		})
 	});
 
-	if(has("event-create-event")){
-		Compose.call(KeyboardEvent.prototype, {
+	if(has("event-create-event") && has("event-key-events")){
+		Compose.modify(KeyboardEvent, {
 			create: Compose.around(function(baseCreate){
-				var createEvent = has("event-key-events") ?
-					function(){
+				return function(){
+					try{
 						var options = this.options,
 							event = event = this.node.ownerDocument.createEvent("KeyEvents");
 
@@ -177,20 +177,6 @@ define([
 							options.keyCode, options.charCode);
 
 						return event;
-					} :
-					function(){
-						var options = this.options,
-							event = this.node.ownerDocument.createEvent("Events");
-
-						event.initEvent(this.type, options.bubbles, options.cancelable, options.view);
-						this.copyOptions(event);
-
-						return event;
-					};
-
-				return function(){
-					try{
-						return createEvent.call(this);
 					}catch(e){
 						return baseCreate.call(this);
 					}
@@ -268,6 +254,24 @@ define([
 		eventd.document.documentElement.removeChild(div);
 	})();
 
+	has.add("kbd-get-selection", function(g, d){
+		return typeof d.getSelection != "undefined";
+	});
+	var insertText = has("kbd-get-selection") ?
+		function(node, text){
+			var start = node.selectionStart,
+				end = node.selectionEnd,
+				original = node.value;
+
+			node.value = original.substring(0, start) +
+				text +
+				original.substring(end, original.length);
+		} :
+		function(node, text){
+			var sel = eventd.document.selection.createRange();
+			sel.text = text;
+		};
+
 	if(has("kbd-text-events")){
 		var TextInput = events.TextInput = Compose(eventd.Event, {
 			type: "textInput",
@@ -300,12 +304,12 @@ define([
 		});
 
 		if(!has("kbd-text-event-sets-value")){
-			Compose.call(TextInput.prototype, {
+			Compose.modify(TextInput, {
 				postDispatch: function(deferred){
 					var node = this.node,
 						options = this.options;
 					deferred.then(function(){
-						node.value = (node.value||"") + options.data;
+						insertText(node, options.data);
 					});
 				}
 			});
@@ -330,12 +334,12 @@ define([
 			});
 		}
 	}else if(!has("kbd-press-chars")){
-		Compose.call(events.KeyPress.prototype, {
+		Compose.modify(events.KeyPress, {
 			postDispatch: function(deferred){
 				var node = this.node,
 					options = this.options;
 				deferred.then(function(){
-					node.value = (node.value||"") + String.fromCharCode(options.charCode || options.keyCode);
+					insertText(node, String.fromCharCode(options.charCode || options.keyCode));
 				});
 			}
 		});
@@ -348,8 +352,14 @@ define([
 	if(!has("kbd-press-backspace-deletes")){
 		if(has("kbd-get-selection")){
 			handleBackspace = function(node){
-				node.selectionStart = node.selectionEnd - 1;
-				document.execCommand("delete");
+				var end = node.selectionEnd,
+					start = end - 1,
+					original = node.value;
+
+				node.value = original.substring(0, start) +
+					original.substring(end, original.length);
+					
+				node.selectionStart = node.selectionEnd = start;
 			};
 		}else{
 			handleBackspace = function(node){
@@ -395,7 +405,7 @@ define([
 			}
 		};
 	}
-	Compose.call(events.KeyDown.prototype, {
+	Compose.modify(events.KeyDown, {
 		postDispatch: function(deferred){
 			var key = this.options.key,
 				node = this.node;
