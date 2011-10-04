@@ -3,22 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<title>Eventd test</title>
-	<script>
-		var dojoConfig = {
-			async: true,
-			packages: [{
-				name: 'eventd',
-				location: '../..',
-				lib: '.'
-			},{
-				name: 'compose',
-				location: '../compose',
-				main: 'compose',
-				lib: '.'
-			}]
-		};
-	</script>
-	<script src="dojo/dojo.js"></script>
+	<script src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
 	<script>
 		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom'], function(mouse, keyboard, dom){
 			dom.byId("cbx").checked = false;

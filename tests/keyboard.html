@@ -9,12 +9,7 @@
 			height: 200px;
 		}
 	</style>
-	<script>
-		var dojoConfig = {
-			async: true
-		};
-	</script>
-	<script src="../../dojo/dojo.js"></script>
+	<script src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
 	<script>
 		var key, on;
 		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom', 'dojo/_base/kernel'], function(mouse, keyboard, dom, dojo){
@@ -44,9 +39,6 @@
 						console.log(evt.type, evt.keyCode, evt.charCode);
 					});
 				}
-				on(dom.byId("div"), type, function(evt){
-					console.log(evt.type, evt.keyCode, evt.charCode);
-				});
 			});
 		});
 	</script>
@@ -54,6 +46,5 @@
 <body>
 	<input tabindex="1" id="txt" />
 	<textarea tabindex="2" id="txta"></textarea>
-	<div id="div" tabindex="1" style="width: 400px; height: 400px;"></div>
 </body>
 </html>
