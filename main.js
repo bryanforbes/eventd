@@ -10,6 +10,11 @@ define([
 		cname = "constructor",
 		global = this;
 
+	// Add syntactic sugar to Compose
+	Compose.modify = function modify(constructor, object){
+		Compose.call(constructor.prototype, object);
+	};
+
 	function Dispatcher(event){
 		return function(node, options){
 			return (new event(node, options)).dispatch();
@@ -24,23 +29,12 @@ define([
 		return !!d.createEvent;
 	});
 
-	has.add("event-events", function(g, d){
-		if(!has("event-create-event")){
-			return;
-		}
-		try{
-			d.createEvent("Events");
-			return 1;
-		}catch(e){
-			return 0;
-		}
-	});
-
 	var Event = Compose(function(node, options){
 		this.node = dom.byId(node);
 		this.setOptions(options);
 
 		this._event = this.create();
+		this.copyOptions(this._event);
 	},{
 		node: null,
 		type: null,
@@ -52,7 +46,7 @@ define([
 		baseOptions: {
 			bubbles: true,
 			cancelable: true,
-			view: global
+			view: global.document.defaultView || global
 		},
 
 		setOptions: function(options){
@@ -97,15 +91,11 @@ define([
 	});
 
 	if(has("event-create-event")){
-		var eventName = "Events";
-		if(!has("event-events")){
-			eventName = "UIEvents";
-		}
-		Compose.call(Event.prototype, {
+		Compose.modify(Event, {
 			create: function(){
-				var event = this.node.ownerDocument.createEvent(eventName);
-				event.initEvent(this.type, this.options.bubbles, this.options.cancelable);
-				this.copyOptions(event);
+				var event = this.node.ownerDocument.createEvent("UIEvents"),
+					options = this.options;
+				event.initUIEvent(this.type, options.bubbles, options.cancelable, options.view, options.detail);
 				return event;
 			},
 			_dispatch: function(){
@@ -124,11 +114,9 @@ define([
 			}
 		});
 	}else{
-		Compose.call(Event.prototype, {
+		Compose.modify(Event, {
 			create: function(){
-				var event = this.node.ownerDocument.createEventObject();
-				this.copyOptions(event);
-				return event;
+				return this.node.ownerDocument.createEventObject();
 			},
 			_dispatch: function(){
 				try{
