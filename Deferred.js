@@ -190,5 +190,12 @@ define(['compose', 'dojo/on'], function(Compose, on){
 		return d.promise;
 	};
 
+	Deferred.when = function when(promiseOrValue, callback, errback, progressHandler){
+		if(promiseOrValue && typeof promiseOrValue.then === "function"){
+			return promiseOrValue.then(callback, errback, progressHandler);
+		}
+		return callback(promiseOrValue);
+	};
+
     return Deferred;
 });
