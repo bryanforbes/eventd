@@ -2,13 +2,13 @@ define([
 	'exports',
 	'./Deferred',
 	'compose',
-	'dojo/dom',
-	'dojo/_base/sniff'
+	'eventd/adapter!dom',
+	'eventd/adapter!has'
 ], function(exports, Deferred, Compose, dom, has){
 	var op = Object.prototype,
 		opts = op.toString,
 		cname = "constructor",
-		global = this;
+		global = (this === exports ? window : this);
 
 	// Add syntactic sugar to Compose
 	Compose.modify = function modify(constructor, object){
@@ -50,7 +50,7 @@ define([
 		},
 
 		setOptions: function(options){
-			this.options = Compose.create(this.baseOptions, options);
+			this.options = Compose.create(this.baseOptions, options||{});
 		},
 		copyOptions: function(event){
 			// this doesn't need to look for shadowed properties since

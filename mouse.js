@@ -3,11 +3,11 @@ define([
 	'./main',
 	'./Deferred',
 	'compose',
-	'dojo/_base/sniff',
-	'dojo/on',
-	'dojo/dom-geometry',
-	'dojo/domReady!'
-], function(exports, eventd, Deferred, Compose, has, on, geom){
+	'eventd/adapter!has',
+	'eventd/adapter!on',
+	'eventd/adapter!dom',
+	'eventd/adapter!ready!'
+], function(exports, eventd, Deferred, Compose, has, on, dom){
 	var defaults = (function(undefined){
 		var overrides;
 		if(has("ie")){
@@ -65,7 +65,7 @@ define([
 		}),
 		setOptions: Compose.after(function(){
 			var docEl = eventd.document.documentElement,
-				scroll = geom.docScroll(),
+				scroll = dom.docScroll(),
 				options = this.options;
 
 			if(!options.clientX){
@@ -228,7 +228,7 @@ define([
 			typeof options.clientY == "undefined" &&
 			typeof options.pageX == "undefined" &&
 			typeof options.pageY == "undefined"){
-			var pos = geom.position(node);
+			var pos = dom.position(node);
 			options.pageX = pos.x + (pos.w / 2);
 			options.pageY = pos.y + (pos.h / 2);
 		}

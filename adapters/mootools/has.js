@@ -33,15 +33,15 @@ define([], function(){
 		addtest("touch", "ontouchstart" in document);
 		// I don't know if any of these tests are really correct, just a rough guess
 		addtest("device-width", screen.availWidth || innerWidth);
-		addtest("agent-ios", !!dua.match(/iPhone|iP[ao]d/));
-		addtest("agent-android", dua.indexOf("android") > 1);
+		addtest("agent-ios", Browser.Platform.ios);
+		addtest("agent-android", Browser.Platform.android);
 
-		addtest("air", dua.indexOf("AdobeAIR") >= 0);
+		addtest("air", Browser.Features.air);
 		addtest("khtml", dav.indexOf("Konqueror") >= 0 ? tv : 0);
 		addtest("webkit", parseFloat(dua.split("WebKit/")[1]) || undefined);
-		addtest("chrome", parseFloat(dua.split("Chrome/")[1]) || undefined);
-		addtest("mac", dav.indexOf("Macintosh") >= 0);
-		addtest("ios", /iPhone|iPod|iPad/.test(dua));
+		addtest("chrome", Browser.chrome && Browser.version);
+		addtest("mac", Browser.Platform.mac);
+		addtest("ios", Browser.Platform.ios);
 		addtest("android", parseFloat(dua.split("Android ")[1]) || undefined);
 		addtest("wii", typeof opera != "undefined" && opera.wiiremote);
 

@@ -10,35 +10,34 @@
 		div.over {
 			background-color: red;
 		}
+		#container {
+			width: 200px;
+			height: 200px;
+			border: 1px solid black;
+		}
+		#container2 {
+			width: 100px;
+			height: 100px;
+			border: 1px solid blue;
+		}
 	</style>
 	<script src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
 </head>
 <body>
 	<input id="cbx" type="checkbox" />
-	<div id="container" style="width: 200px; height: 200px; border: 1px solid black;">
-		<div id="container2" style="width: 100px; height: 100px; border: 1px solid blue;"></div>
+	<div id="container">
+		<div id="container2"></div>
 	</div>
 	<script>
-		require(['eventd/mouse-move', 'dojo/on', 'dojo/dom', 'dojo/dom-class', 'dojo/_base/window'], function(mouse, on, dom, cls, win){
-			/*on(dom.byId("container"), "mousemove", function(evt){
-				console.log("Move", evt);
-			});*/
-			on(win.body(), "mouseover", function(evt){
-				console.log("Over", evt.target);
-				cls.add(evt.target, "over");
+		require(['eventd/main', 'eventd/mouse-move', 'eventd/adapter!on', 'eventd/adapter!dom', 'dojo/dom-class'], function(eventd, mouse, on, dom, cls){
+			on(eventd.body(), "mouseover,mouseout", function(evt){
+				var type = evt.type.slice(5);
+				console.log(type, evt.target);
+				cls[type == "over"?"add":"remove"](evt.target, "over");
 			});
-			on(win.body(), "mouseout", function(evt){
-				console.log("Out", evt.target);
-				cls.remove(evt.target, "over");
-			});
-			on(dom.byId("container"), "mouseenter", function(evt){
-				console.log("Enter", evt.target);
-			});
-			on(dom.byId("container"), "mouseleave", function(evt){
-				console.log("Leave", evt.target);
-			});
-			on(dom.byId("container"), "mousemove", function(evt){
-				console.log("Move", evt.target);
+			on(dom.byId("container"), "mouseenter,mouseleave,mousemove", function(evt){
+				var type = evt.type.slice(5);
+				console.log(type, evt.target);
 			});
 
 			dom.byId("cbx").checked = false;
@@ -46,7 +45,7 @@
 			setTimeout(function(){
 				mouse.click(dom.byId("cbx")).delay(1000).then(function(){
 					mouse.click(dom.byId("cbx")).then(function(){
-						mouse.move(300, 300, 2000, true);
+						mouse.move(300, 300, 2000);
 					});
 				});
 			},500);

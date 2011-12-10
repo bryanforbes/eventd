@@ -9,15 +9,13 @@
 			height: 200px;
 		}
 	</style>
-	<script src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
+	<script src="../../dojo/dojo.js" data-dojo-config="async: true, queryModule: 'dojo/query'"></script>
 	<script>
-		var key, on;
-		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom', 'dojo/_base/kernel'], function(mouse, keyboard, dom, dojo){
-			key = keyboard;
+		require(['eventd/mouse', 'eventd/keyboard', 'eventd/adapter!dom'], function(mouse, keyboard, dom){
 			dom.byId("txt").value = "";
 			setTimeout(function(){
 				mouse.click("txt").delay(500).then(function(){
-					keyboard.keystrokes("txt", ["Bryan Forbes\r\b\r", dojo.keys.LEFT_ARROW, "a"]).delay(500).then(function(){
+					keyboard.keystrokes("txt", ["Bryan Forbes\r\b\r", keyboard.keys.LEFT_ARROW, "a"]).delay(500).then(function(){
 						mouse.click("txta").delay(500).then(function(){
 							keyboard.keystrokes("txta", "Bryan Forbes\rasdf\b\b\rasdf");
 						});
@@ -26,10 +24,11 @@
 			},500);
 		});
 
-		var handle;
-		require(['dojo', 'dojo/on', 'dojo/_base/array', 'dojo/dom'], function(dojo, on, array, dom){
-			window.on = on;
-			array.forEach(["keydown", "keypress", "keyup", "change", "textInput", "input"], function(type){
+		require(['eventd/adapter!on', 'eventd/adapter!dom'], function(on, dom){
+			on(dom.byId("txt"), "keydown,keypress,keyup,change,textInput,input", function(evt){
+				console.log(evt.type, evt.keyCode, evt.charCode);
+			});
+			/*array.forEach(["keydown", "keypress", "keyup", "change", "textInput", "input"], function(type){
 				if(type == "keydown"){
 					handle = on(dom.byId("txt"), type, function(evt){
 						console.log(evt.type, evt.keyCode, evt.charCode);
@@ -39,7 +38,7 @@
 						console.log(evt.type, evt.keyCode, evt.charCode);
 					});
 				}
-			});
+			});*/
 		});
 	</script>
 </head>

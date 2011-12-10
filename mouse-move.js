@@ -3,81 +3,114 @@ define([
 	'./Deferred',
 	'./mouse',
 	'compose',
-	'dojo/_base/fx'
-], function(eventd, Deferred, mouse, Compose, fx){
+	'./utils/timer'
+], function(eventd, Deferred, mouse, Compose, timer){
 	var MouseMove = mouse.events.MouseMove = Compose(mouse.Event, {
 		type: "mousemove"
 	});
 
 	function XYLine(startX, endX, startY, endY){
-		var xLine = new fx._Line(startX, endX);
-		var yLine = new fx._Line(startY, endY);
-		return {
-			getValue: function(/* float */ n){
-				return {
-					x: xLine.getValue(n),
-					y: yLine.getValue(n)
-				};
-			}
+		return function(n){
+			n = 0.5 + ((Math.sin((n + 1.5) * Math.PI)) / 2); // perform easing
+			return {
+				x: ((endX - startX) * n) + startX,
+				y: ((endY - startY) * n) + startY
+			};
 		};
+	}
+
+	function outOver(last, current){
+		return mouse.mouseout(last).then(function(){
+			return mouse.mouseover(current);
+		});
+	}
+
+	function move(node, x, y){
+		return mouse.mousemove(node, { clientX: x, clientY: y });
+	}
+
+	function mover(line, onCycle, onEnd, duration){
+		var percent = 0,
+			startTime = -1;
+
+		duration = duration || mouse._defaultDuration;
+
+		var init = function(){
+			startTime = +(new Date);
+			init = null;
+		};
+		function cycle(){
+			init && init();
+
+			var curr = +(new Date),
+				step = (curr - startTime) / duration;
+
+			if(step >= 1){
+				step = 1;
+			}
+
+			percent = step;
+
+			onCycle(line(step));
+
+			if(percent >= 1){
+				onEnd();
+				remover();
+			}
+		}
+
+		var remover = timer(cycle);
+
+		return remover;
 	}
 
 	return Compose.call(mouse, {
 		mousemove: eventd.wrapDispatcher(MouseMove, mouse.addPosition),
 		_current: { x: 0, y: 0 },
-		move: (function(){
-			function outOver(last, current){
-				return mouse.mouseout(last).then(function(){
-					return mouse.mouseover(current);
+		_defaultDuration: 350,
+		move: function(clientX, clientY, duration, trace){
+			var current = mouse._current,
+				lastNode = eventd.document.elementFromPoint(current.x, current.y),
+				d, res = new Deferred(function(){
+					remover && remover();
 				});
-			}
-			function move(node, x, y){
-				return mouse.mousemove(node, { clientX: x, clientY: y });
-			}
-			return function(clientX, clientY, duration, trace){
-				var current = mouse._current,
-					lastNode = eventd.document.elementFromPoint(current.x, current.y),
-					d, res = new Deferred(function(){
-						a && a.stop();
-					});
-				var a = new fx.Animation({
-					curve: XYLine(mouse._current.x, clientX, mouse._current.y, clientY),
-					duration: duration || fx.Animation.prototype.duration,
-					onAnimate: function(values){
-						var node = eventd.document.elementFromPoint(values.x, values.y);
-						if(lastNode){
-							if(lastNode !== node){
-								d = Deferred.when(d, function(){
-									return outOver(lastNode, node);
-								});
-								lastNode = node;
-							}
-						}else{
+
+			var remover = mover(
+				XYLine(mouse._current.x, clientX, mouse._current.y, clientY),
+				function(values){
+					var node = eventd.document.elementFromPoint(values.x, values.y);
+					if(lastNode){
+						if(lastNode !== node){
+							d = Deferred.when(d, function(){
+								return outOver(lastNode, node);
+							});
 							lastNode = node;
 						}
+					}else{
+						lastNode = node;
+					}
 
-						d = Deferred.when(d, function(){
-							return move(lastNode, values.x, values.y);
-						});
+					d = Deferred.when(d, function(){
+						return move(lastNode, values.x, values.y);
+					});
 
-						if(trace){
-							d.then(function(){
-								var n = eventd.document.createElement("div");
-								n.style.cssText = "width: 2px; height: 2px; background-color: blue; position: absolute; left: " + values.x + "px; top: " + values.y + "px;";
-								eventd.body().appendChild(n);
-							});
-						}
-					},
-					onEnd: function(){
+					if(trace){
 						d.then(function(){
-							res.resolve();
+							var n = eventd.document.createElement("div");
+							n.style.cssText = "width: 2px; height: 2px; background-color: blue; position: absolute; left: " + values.x + "px; top: " + values.y + "px;";
+							eventd.body().appendChild(n);
 						});
 					}
-				});
-				a.play();
+				},
+				function(){
+					d.then(function(){
+						res.resolve();
+					});
+				},
+				duration
+			);
 
-				return res.promise;
-			};
-		})()
+			return res.promise;
+		}
 	});
 });

@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Eventd mouse test (Mootools)</title>
+	<style>
+		div {
+			background-color: white;
+		}
+		div.over {
+			background-color: red;
+		}
+		#container {
+			width: 200px;
+			height: 200px;
+			border: 1px solid black;
+		}
+		#container2 {
+			width: 100px;
+			height: 100px;
+			border: 1px solid blue;
+		}
+	</style>
+	<script src="../../../mootools.js"></script>
+	<script>
+		var curl = { baseUrl: '../../..' };
+	</script>
+	<script src="../../../curl/src/curl.js"></script>
+	<script>
+		curl.eventdAdapter = "mootools";
+	</script>
+</head>
+<body>
+	<input id="cbx" type="checkbox" />
+	<div id="container">
+		<div id="container2"></div>
+	</div>
+	<script>
+		curl(['eventd/main', 'eventd/mouse-move'], function(eventd, mouse){
+			function onOverOut(evt){
+				var type = evt.type.slice(5);
+				console.log(type, evt.target);
+				evt.target[(type == "over" ? "add" : "remove") + "Class"]("over");
+			}
+			document.body.addEvents({
+				mouseover: onOverOut,
+				mouseout: onOverOut
+			});
+
+			function onELM(evt){
+				var type = evt.type.slice(5);
+				console.log(type, evt.target);
+			}
+			document.id("container").addEvents({
+				mouseenter: onELM,
+				mouseleave: onELM,
+				mousemove: onELM
+			});
+
+			document.id("cbx").checked = false;
+
+			setTimeout(function(){
+				mouse.click(document.id("cbx")).delay(1000).then(function(){
+					mouse.click(document.id("cbx")).then(function(){
+						mouse.move(300, 300, 2000);
+					});
+				});
+			},500);
+		});
+	</script>
+</body>
+</html>

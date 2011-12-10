@@ -1,0 +1,55 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Eventd keyboard test</title>
+	<style>
+		textarea {
+			width: 300px;
+			height: 200px;
+		}
+	</style>
+	<script src="../../../mootools.js"></script>
+	<script>
+		// mootools doesn't support connecting to textInput events
+		Element.NativeEvents['textInput'] = 2;
+		var curl = { baseUrl: '../../..' };
+	</script>
+	<script src="../../../curl/src/curl.js"></script>
+	<script>
+		curl.eventdAdapter = "mootools";
+	</script>
+	<script>
+		curl(['eventd/mouse', 'eventd/keyboard'], function(mouse, keyboard){
+			var txt = document.id("txt");
+
+			txt.value = "";
+
+			function onKey(evt){
+				console.log(evt.type, evt.code, evt.key);
+			}
+			txt.addEvents({
+				keydown: onKey,
+				keypress: onKey,
+				keyup: onKey,
+				change: onKey,
+				textInput: onKey,
+				input: onKey
+			});
+			setTimeout(function(){
+				mouse.click("txt").delay(500).then(function(){
+					keyboard.keystrokes("txt", ["Bryan Forbes\r\b\r", keyboard.keys.LEFT_ARROW, "a"]).delay(500).then(function(){
+						mouse.click("txta").delay(500).then(function(){
+							keyboard.keystrokes("txta", "Bryan Forbes\rasdf\b\b\rasdf");
+						});
+					});
+				});
+			},500);
+		});
+	</script>
+</head>
+<body>
+	<input tabindex="1" id="txt" />
+	<textarea tabindex="2" id="txta"></textarea>
+</body>
+</html>
