@@ -3,11 +3,11 @@ define([
 	'./main',
 	'./Deferred',
 	'compose',
+	'./utils/listen',
 	'eventd/adapter!has',
-	'eventd/adapter!on',
 	'eventd/adapter!dom',
 	'eventd/adapter!ready!'
-], function(exports, eventd, Deferred, Compose, has, on, dom){
+], function(exports, eventd, Deferred, Compose, on, has, dom){
 	var defaults = (function(undefined){
 		var overrides;
 		if(has("ie")){

@@ -9,9 +9,9 @@
 			height: 200px;
 		}
 	</style>
-	<script src="../../dojo/dojo.js" data-dojo-config="async: true, queryModule: 'dojo/query'"></script>
+	<script src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
 	<script>
-		require(['eventd/mouse', 'eventd/keyboard', 'eventd/adapter!dom'], function(mouse, keyboard, dom){
+		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom'], function(mouse, keyboard, dom){
 			dom.byId("txt").value = "";
 			setTimeout(function(){
 				mouse.click("txt").delay(500).then(function(){
@@ -24,7 +24,7 @@
 			},500);
 		});
 
-		require(['eventd/adapter!on', 'eventd/adapter!dom'], function(on, dom){
+		require(['dojo/on', 'dojo/dom'], function(on, dom){
 			on(dom.byId("txt"), "keydown,keypress,keyup,change,textInput,input", function(evt){
 				console.log(evt.type, evt.keyCode, evt.charCode);
 			});

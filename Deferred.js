@@ -1,4 +1,4 @@
-define(['compose', 'eventd/adapter!on'], function(Compose, on){
+define(['compose', './utils/listen'], function(Compose, on){
     var freeze = Object.freeze || function(){};
 
     var Promise = Compose(function(){});

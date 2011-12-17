@@ -29,7 +29,7 @@
 		<div id="container2"></div>
 	</div>
 	<script>
-		require(['eventd/main', 'eventd/mouse-move', 'eventd/adapter!on', 'eventd/adapter!dom', 'dojo/dom-class'], function(eventd, mouse, on, dom, cls){
+		require(['eventd/main', 'eventd/mouse-move', 'dojo/on', 'dojo/dom', 'dojo/dom-class'], function(eventd, mouse, on, dom, cls){
 			on(eventd.body(), "mouseover,mouseout", function(evt){
 				var type = evt.type.slice(5);
 				console.log(type, evt.target);

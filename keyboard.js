@@ -2,12 +2,13 @@ define([
 	'exports',
 	'./main',
 	'compose',
-	'eventd/adapter!on',
+	'./utils/listen',
+	'./utils/delegate',
 	'eventd/adapter!array',
 	'eventd/adapter!query',
 	'eventd/adapter!has',
 	'eventd/adapter!ready!'
-], function(exports, eventd, Compose, on, array, query, has){
+], function(exports, eventd, Compose, on, delegate, array, query, has){
 	var keys = {
 		BACKSPACE: 8,
 		TAB: 9,
@@ -668,7 +669,7 @@ define([
 	}
 
 	var _focusNode;
-	on(eventd.body(), "*:focus", function(evt){
+	delegate(eventd.body(), "focus", "*", function(evt){
 		_focusNode = this;
 	});
 	/*on(win.body(), "*:blur", function(evt){
