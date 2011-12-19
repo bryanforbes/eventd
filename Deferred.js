@@ -102,11 +102,9 @@ define(['compose', './utils/listen'], function(Compose, on){
 		function delay(del){
 			del = typeof del != "undefined" ? del : 300; 
 			return then(function(value){
-				var promise = Deferred.setTimeout(function(){
+				return Deferred.setTimeout(function(){
 					return value;
 				}, del);
-
-				return promise;
 			});
 		}
 
