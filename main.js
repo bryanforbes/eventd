@@ -189,11 +189,7 @@ define([
 		},
 
 		getNode: function getNode(node){
-			if(typeof node != "string"){
-				return node.focusNode || node.domNode || node;
-			}else{
-				return dom.byId(node);
-			}
+			return typeof node == "string" ? dom.byId(node) : node;
 		},
 
 		wrapEvent: function wrapEvent(func, modifier){
