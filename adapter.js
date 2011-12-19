@@ -1,9 +1,13 @@
 define(["require"], function(require){
-	var adapter = (require.rawConfig || ((typeof curl != "undefined" && curl) || {})).eventdAdapter || "dojo",
-		adapters = {};
+	var adapter, adapters, undef;
+	
+	adapters = {};
 
 	return {
 		load: function(id, parentRequire, loaded, config){
+			if (adapter == undef) {
+				adapter = (require.rawConfig || config).eventAdapter || "dojo";
+			}
 			if(adapters[id]){
 				loaded(adapters[id]);
 			}else{
