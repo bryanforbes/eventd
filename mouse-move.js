@@ -73,6 +73,7 @@ define([
 				lastNode = eventd.document.elementFromPoint(current.x, current.y),
 				d, res = new Deferred(function(){
 					remover && remover();
+					remover = null;
 				});
 
 			var remover = mover(
