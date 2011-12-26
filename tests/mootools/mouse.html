@@ -23,12 +23,14 @@
 	</style>
 	<script src="../../../mootools.js"></script>
 	<script>
-		var curl = { baseUrl: '../../..' };
+		var curl = {
+			baseUrl: '../../..',
+			paths: {
+				'eventd-adapter': 'eventd/adapters/mootools'
+			}
+		};
 	</script>
 	<script src="../../../curl/src/curl.js"></script>
-	<script>
-		curl.eventdAdapter = "mootools";
-	</script>
 </head>
 <body>
 	<input id="cbx" type="checkbox" />

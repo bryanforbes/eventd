@@ -9,7 +9,15 @@
 			height: 200px;
 		}
 	</style>
-	<script src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
+	<script>
+		var dojoConfig = {
+			async: true,
+			aliases: [
+				['eventd-adapter', 'eventd/adapters/dojo']
+			]
+		};
+	</script>
+	<script src="../../dojo/dojo.js"></script>
 	<script>
 		require(['eventd/mouse', 'eventd/keyboard', 'dojo/dom'], function(mouse, keyboard, dom){
 			dom.byId("txt").value = "";

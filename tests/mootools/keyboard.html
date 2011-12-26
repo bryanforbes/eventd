@@ -13,12 +13,14 @@
 	<script>
 		// mootools doesn't support connecting to textInput events
 		Element.NativeEvents['textInput'] = 2;
-		var curl = { baseUrl: '../../..' };
+		var curl = {
+			baseUrl: '../../..',
+			paths: {
+				'eventd-adapter': 'eventd/adapters/mootools'
+			}
+		};
 	</script>
 	<script src="../../../curl/src/curl.js"></script>
-	<script>
-		curl.eventdAdapter = "mootools";
-	</script>
 	<script>
 		curl(['eventd/mouse', 'eventd/keyboard'], function(mouse, keyboard){
 			var txt = document.id("txt");

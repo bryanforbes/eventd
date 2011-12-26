@@ -21,7 +21,15 @@
 			border: 1px solid blue;
 		}
 	</style>
-	<script src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
+	<script>
+		var dojoConfig = {
+			async: true,
+			aliases: [
+				['eventd-adapter', 'eventd/adapters/dojo']
+			]
+		};
+	</script>
+	<script src="../../dojo/dojo.js"></script>
 </head>
 <body>
 	<input id="cbx" type="checkbox" />
