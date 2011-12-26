@@ -1,5 +1,5 @@
 define([], function(){
-// imported from Dojo 1.7.0b6
+// imported from Dojo 1.7.1
 
 // TODOC: after/before/around return object
 // TODOC: after/before/around param types. 
