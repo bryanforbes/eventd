@@ -2,7 +2,7 @@ define([
 	'exports',
 	'./main',
 	'./Deferred',
-	'compose',
+	'compose/compose',
 	'./utils/listen',
 	'eventd/adapter!has',
 	'eventd/adapter!dom',

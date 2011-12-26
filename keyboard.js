@@ -1,7 +1,7 @@
 define([
 	'exports',
 	'./main',
-	'compose',
+	'compose/compose',
 	'./utils/listen',
 	'./utils/delegate',
 	'eventd/adapter!array',

@@ -2,7 +2,7 @@ define([
 	'./main',
 	'./Deferred',
 	'./mouse',
-	'compose',
+	'compose/compose',
 	'./utils/timer'
 ], function(eventd, Deferred, mouse, Compose, timer){
 	var MouseMove = mouse.events.MouseMove = Compose(mouse.Event, {

@@ -1,4 +1,4 @@
-define(['compose', './utils/listen'], function(Compose, on){
+define(['compose/compose', './utils/listen'], function(Compose, on){
     var freeze = Object.freeze || function(){};
 
     var Promise = Compose(function(){});

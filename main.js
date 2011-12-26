@@ -1,7 +1,7 @@
 define([
 	'exports',
 	'./Deferred',
-	'compose',
+	'compose/compose',
 	'eventd/adapter!dom',
 	'eventd/adapter!has'
 ], function(exports, Deferred, Compose, dom, has){
