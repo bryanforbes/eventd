@@ -4,9 +4,9 @@ define([
 	'./Deferred',
 	'compose/compose',
 	'./utils/listen',
-	'eventd/adapter!has',
-	'eventd/adapter!dom',
-	'eventd/adapter!ready!'
+	'eventd-adapter!has',
+	'eventd-adapter!dom',
+	'eventd-adapter!ready!'
 ], function(exports, eventd, Deferred, Compose, on, has, dom){
 	var defaults = (function(undefined){
 		var overrides;

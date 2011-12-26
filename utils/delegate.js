@@ -1,7 +1,7 @@
 define([
 	'./listen',
-	'eventd/adapter!query',
-	'eventd/adapter!has'
+	'eventd-adapter!query',
+	'eventd-adapter!has'
 ], function(listen, query, has){
 	var captures = {};
 	if(has('dom-addeventlistener')){

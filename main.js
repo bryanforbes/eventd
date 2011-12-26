@@ -2,8 +2,8 @@ define([
 	'exports',
 	'./Deferred',
 	'compose/compose',
-	'eventd/adapter!dom',
-	'eventd/adapter!has'
+	'eventd-adapter!dom',
+	'eventd-adapter!has'
 ], function(exports, Deferred, Compose, dom, has){
 	var op = Object.prototype,
 		opts = op.toString,

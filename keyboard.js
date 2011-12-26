@@ -4,10 +4,10 @@ define([
 	'compose/compose',
 	'./utils/listen',
 	'./utils/delegate',
-	'eventd/adapter!array',
-	'eventd/adapter!query',
-	'eventd/adapter!has',
-	'eventd/adapter!ready!'
+	'eventd-adapter!array',
+	'eventd-adapter!query',
+	'eventd-adapter!has',
+	'eventd-adapter!ready!'
 ], function(exports, eventd, Compose, on, delegate, array, query, has){
 	var keys = {
 		BACKSPACE: 8,

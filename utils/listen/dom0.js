@@ -1,5 +1,5 @@
 define([
-	'eventd/adapter!has',
+	'eventd-adapter!has',
 	'../aspect'
 ], function(has, aspect, exports){
     var aslice = [].slice;
