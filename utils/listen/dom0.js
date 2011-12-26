@@ -1,7 +1,7 @@
 define([
 	'eventd-adapter!has',
-	'../aspect'
-], function(has, aspect, exports){
+	'eventd-adapter!aspect'
+], function(has, aspect){
     var aslice = [].slice;
     function toArray(arrLike, offset, startWith){
         return (startWith||[]).concat(aslice.call(arrLike, offset||0));
@@ -51,6 +51,7 @@ define([
 		};
 	}
 
+	var onMethod = aspect.on ? "on" : "after";
 	var listen = function(target, type, listener){
 		var existing = target[type],
 			needHandler = (!existing || !existing.eventdAttached);
@@ -60,7 +61,7 @@ define([
 		if(fixEvent && needHandler){
 			aspect.before(target, type, bind(fixEvent, target));
 		}
-		return aspect.after(target, type, bind(listener, target), true);
+		return aspect[onMethod](target, type, bind(listener, target), true);
 	};
 
 	if(has("jscript") < 5.8 && !has("config-_allow_leaks")){
@@ -114,7 +115,7 @@ define([
 				}
 
 				if(existing && needHandler){
-					aspect.after(data, type, existing, true);
+					aspect[onMethod](data, type, existing, true);
 				}
 
 				var signal = aspect.after(data, type, bind(listener, target));

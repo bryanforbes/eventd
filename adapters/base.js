@@ -1,6 +1,8 @@
 define(['require', 'exports'], function(require, exports){
 	exports.adapter = 'base';
-	exports.map = {};
+	exports.map = {
+		aspect: "aop/aop"
+	};
 
 	exports.normalize = function(id, toAbsId){
 		var idx, end = "";

@@ -1,7 +1,7 @@
-define(["./aspect"], function(aspect){
+define(["eventd-adapter!aspect"], function(aspect){
 	var count = 0,
 		interval = null,
-		runner = {};
+		runner = { cycle: function(){} };
 
 	function timer(callback){
 		var handle = aspect.after(runner, "cycle", callback);
