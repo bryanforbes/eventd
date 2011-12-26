@@ -11,7 +11,7 @@ define(['require', 'exports'], function(require, exports){
 		if(id in exports.map){
 			return exports.map[id] + end;
 		}
-		return "eventd/adapters/" + exports.adapter + "/" + id;
+		return "eventd/adapters/" + exports.adapter + "/" + id + end;
 	};
 
 	var adapters = {};

@@ -1,4 +1,4 @@
-define([], function(){
+define(['exports'], function(exports){
 	var isBrowser =
 			// the most fundamental decision: are we in the browser?
 			typeof window != "undefined" &&
