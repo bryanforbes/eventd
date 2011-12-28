@@ -3,11 +3,15 @@ define([
 	'./Deferred',
 	'./mouse',
 	'compose/compose',
+	'eventd-adapter!has',
 	'./utils/timer'
-], function(eventd, Deferred, mouse, Compose, timer){
+], function(eventd, Deferred, mouse, Compose, has, timer){
 	var MouseMove = mouse.events.MouseMove = Compose(mouse.Event, {
 		type: "mousemove"
 	});
+
+	var fromName = has("event-create-event") ? "relatedTarget" : "fromElement",
+		toName = has("event-create-event") ? "relatedTarget" : "toElement";
 
 	function XYLine(startX, endX, startY, endY){
 		return function(n){
@@ -20,8 +24,13 @@ define([
 	}
 
 	function outOver(last, current){
-		return mouse.mouseout(last).then(function(){
-			return mouse.mouseover(current);
+		var outOpts = {},
+			overOpts = {};
+
+		outOpts[toName] = current;
+		overOpts[fromName] = last;
+		return mouse.mouseout(last, outOpts).then(function(){
+			return mouse.mouseover(current, overOpts);
 		});
 	}
 
