@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Eventd Mouse Unit Tests</title>
+
+	<style>
+		pre {
+			right: 0;
+			left: inherit !important;
+		}
+	</style>
+	<script>
+		var dojoConfig = {
+			async: true,
+			aliases: [
+				['eventd-adapter', 'eventd/adapters/dojo']
+			]
+		};
+	</script>
+	<script src="../../es5-shim/es5-shim.js"></script>
+	<script src="../../dojo/dojo.js"></script>
+	<script>
+		require([
+			"test/engines/browser/test",
+			"eventd/mouse",
+			"dojo/on",
+			"dojo/dom",
+			"dojo/domReady!"
+		], function(test, mouse, on, dom){
+			var form = dom.byId("form"),
+				checkbox = dom.byId("checkbox"),
+				textbox = dom.byId("textbox"),
+				submit = dom.byId("submit");
+
+			checkbox.checked = false;
+
+			on(form, "submit", function(evt){
+				evt.preventDefault();
+			});
+
+			test.run({
+				'test click fires once': function(assert){
+					var count = 0,
+						h = on(textbox, "click", function(evt){
+							count++;
+						});
+
+					return mouse.click(textbox).delay(500).then(function(){
+						assert.equal(count, 1, "click fired once");
+					});
+				},
+				'test click checks and changes': function(assert){
+					var changed = 0,
+						h = on(checkbox, "change", function(evt){
+							changed = 1;
+						});
+					return mouse.click(checkbox).delay(500).then(function(){
+						assert.ok(checkbox.checked, 'checkbox is checked');
+						assert.ok(changed, 'change fired');
+						changed = 0;
+						return mouse.click(checkbox).then(function(){
+							assert.ok(!checkbox.checked, 'checkbox is unchecked');
+							assert.ok(changed, 'change fired');
+							h.remove();
+						});
+					});
+				},
+				'test click focuses': function(assert){
+					checkbox.blur();
+					return mouse.click(checkbox).then(function(){
+						assert.equal(document.activeElement, checkbox, "checkbox is focused");
+						return mouse.click(textbox).then(function(){
+							assert.equal(document.activeElement, textbox, "textbox is focused");
+						});
+					});
+				},
+				'test click submits': function(assert){
+					var submitted = 0,
+						h = on.once(form, "submit", function(evt){
+							submitted = 1;
+						});
+					return mouse.click(submit).delay(500).then(function(){
+						assert.ok(submitted, "form submitted");
+						!submitted && h.remove();
+					});
+				}
+			});
+		});
+	</script>
+</head>
+<body>
+	<form id="form" action="#">
+		<input id="checkbox" type="checkbox" name="checkbox" />
+		<input id="textbox" type="text" name="textbox" />
+
+		<input id="submit" type="submit" name="submit" value="Submit" />
+	</form>
+</body>
+</html>
