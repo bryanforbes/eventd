@@ -51,12 +51,12 @@
 
 			function onELM(evt){
 				var type = evt.type.slice(5);
-				console.log(type, evt.target);
+				console.log(type == "over" ? "enter" : (type == "out" ? "leave" : type), evt.target);
 			}
 			document.id("container").addEvents({
+				mousemove: onELM,
 				mouseenter: onELM,
-				mouseleave: onELM,
-				mousemove: onELM
+				mouseleave: onELM
 			});
 
 			document.id("cbx").checked = false;

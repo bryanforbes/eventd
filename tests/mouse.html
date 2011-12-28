@@ -37,16 +37,22 @@
 		<div id="container2"></div>
 	</div>
 	<script>
-		require(['eventd/main', 'eventd/mouse-move', 'dojo/on', 'dojo/dom', 'dojo/dom-class'], function(eventd, mouse, on, dom, cls){
+		require(['eventd/main', 'eventd/mouse-move', 'dojo/on', 'dojo/dom', 'dojo/dom-class', 'dojo/mouse'], function(eventd, mouse, on, dom, cls, dmouse){
 			on(eventd.body(), "mouseover,mouseout", function(evt){
 				var type = evt.type.slice(5);
 				console.log(type, evt.target);
 				cls[type == "over"?"add":"remove"](evt.target, "over");
 			});
-			on(dom.byId("container"), "mouseenter,mouseleave,mousemove", function(evt){
+
+			function onELM(evt){
 				var type = evt.type.slice(5);
-				console.log(type, evt.target);
-			});
+				console.log(type == "over" ? "enter" : (type == "out" ? "leave" : type), evt.target);
+			}
+
+			var container = dom.byId("container");
+			on(container, "mousemove", onELM);
+			on(container, dmouse.enter, onELM);
+			on(container, dmouse.leave, onELM);
 
 			dom.byId("cbx").checked = false;
 
