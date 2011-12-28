@@ -278,19 +278,11 @@ define([
 				});
 			});
 		}, addPosition),
-		_overTarget: null,
 		mouseover: wrapEvent(function(node, options){
-			if(exports._overTarget){
-				exports.mouseout(exports._overTarget);
-			}
-			return mouseover(node, options).then(function(){
-				exports._overTarget = node;
-			});
+			return mouseover(node, options);
 		}, addPosition),
 		mouseout: wrapEvent(function(node, options){
-			return mouseout(node, options).then(function(){
-				exports._overTarget = null;
-			});
+			return mouseout(node, options);
 		}, addPosition),
 		addPosition: addPosition,
 		events: events
