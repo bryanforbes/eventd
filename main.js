@@ -93,9 +93,14 @@ define([
 	if(has("event-create-event")){
 		Compose.modify(Event, {
 			create: function(){
-				var event = this.node.ownerDocument.createEvent("UIEvents"),
-					options = this.options;
-				event.initUIEvent(this.type, options.bubbles, options.cancelable, options.view, options.detail);
+				try{
+					var event = this.node.ownerDocument.createEvent("UIEvents"),
+						options = this.options;
+					event.initUIEvent(this.type, options.bubbles, options.cancelable, options.view, options.detail);
+				}catch(e){
+					event = this.node.ownerDocument.createEvent("HTMLEvents");
+					event.initEvent(this.type, options.bubbles, options.cancelable);
+				}
 				return event;
 			},
 			_dispatch: function(){
