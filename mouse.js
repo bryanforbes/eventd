@@ -163,6 +163,8 @@ define([
 		div.firstChild.onsubmit = function(e){
 			if(e && e.preventDefault){
 				e.preventDefault();
+			}else{
+				e.returnValue = false;
 			}
 			has.add("mouse-click-submits", 1);
 			return false;
