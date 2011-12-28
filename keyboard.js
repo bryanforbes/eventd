@@ -185,7 +185,7 @@ define([
 				keyOptions;
 
 			if(typeof key != "undefined"){
-				if(typeof key == "number" && array.indexOf(specials, key) > -1){
+				if(typeof key == "number" && ~array.indexOf(specials, key)){
 					// keys.*
 					options.keyCode = key;
 					if(key == keys.ENTER){

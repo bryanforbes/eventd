@@ -6,7 +6,7 @@ define(['require', 'exports'], function(require, exports){
 
 	exports.normalize = function(id, toAbsId){
 		var idx, end = "";
-		if((idx = id.indexOf("!")) > -1){
+		if(~(idx = id.indexOf("!"))){
 			end = id.slice(idx);
 			id = id.substring(0, idx);
 		}

@@ -16,7 +16,7 @@ define(['../base/has'], function(has){
 		addtest("agent-android", Browser.Platform.android);
 
 		addtest("air", Browser.Features.air);
-		addtest("khtml", dav.indexOf("Konqueror") >= 0 ? tv : 0);
+		addtest("khtml", ~dav.indexOf("Konqueror") ? tv : 0);
 		addtest("webkit", parseFloat(dua.split("WebKit/")[1]) || undefined);
 		addtest("chrome", Browser.chrome && Browser.version);
 		addtest("mac", Browser.Platform.mac);
@@ -45,7 +45,7 @@ define(['../base/has'], function(has){
 		if(!has("webkit")){
 			addtest("opera", function(){
 				var isOpera;
-				if(dua.indexOf("Opera") >= 0){
+				if(~dua.indexOf("Opera")){
 					isOpera = tv;
 					// see http://dev.opera.com/articles/view/opera-ua-string-changes and http://www.useragentstring.com/pages/Opera/
 					// 9.8 has both styles; <9.8, 9.9 only old style
@@ -58,7 +58,7 @@ define(['../base/has'], function(has){
 
 			addtest("mozilla", function(){
 				var isMozilla;
-				if(dua.indexOf("Gecko") >= 0 && !has("khtml") && !has("webkit")){
+				if(~dua.indexOf("Gecko") && !has("khtml") && !has("webkit")){
 					isMozilla = tv;
 				}
 				return isMozilla;
